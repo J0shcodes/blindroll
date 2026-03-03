@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
+import { headers } from "next/headers";
+import ContextProvider from "@/context";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -18,17 +20,21 @@ export const metadata: Metadata = {
   generator: "Blindroll"
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const headerObj = await headers()
+  const cookies = headerObj.get("cookie")
   return (
     <html lang="en">
       <body
         className={`${inter.variable} ${jetbrainsmono.variable} antialiased`}
       >
+        <ContextProvider cookies={cookies} >
         {children}
+        </ContextProvider>
       </body>
     </html>
   );
