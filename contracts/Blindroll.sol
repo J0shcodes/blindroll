@@ -221,18 +221,18 @@ contract Blindroll is ZamaEthereumConfig {
 
             euint64 salary = _employees[emp].encryptedSalary;
 
-            // Encrypted conditional check — no info leaked about treasury amount
+            // Encrypted conditional check
             ebool hasFunds = FHE.le(salary, _encryptedTreasuryBalance);
 
             // If treasury is short: actualPayment = 0 (employee silently skipped)
             euint64 actualPayment = FHE.select(hasFunds, salary, FHE.asEuint64(0));
 
-            // Deduct from treasury
+            // Deduct encrypted treasury
             _encryptedTreasuryBalance = FHE.sub(_encryptedTreasuryBalance, actualPayment);
             FHE.allowThis(_encryptedTreasuryBalance);
             FHE.allow(_encryptedTreasuryBalance, employer);
 
-            // Credit employee balance
+            // Credit employee encrypted balance
             _initOrAddBalance(emp, actualPayment);
 
             // Encrypted error feedback for frontend
@@ -241,9 +241,13 @@ contract Blindroll is ZamaEthereumConfig {
                 emp
             );
 
-            // Update plaintext mirrors for ETH withdrawal
-            _plainTreasuryBalance -= _plainSalaryMirror[emp];
-            _plainEmployeeBalanceMirror[emp] += _plainSalaryMirror[emp];
+            // plaintext mirrors
+            uint256 salaryPlain = _plainSalaryMirror[emp];
+
+            if (_plainTreasuryBalance >= salaryPlain) {
+                _plainTreasuryBalance -= salaryPlain;
+                _plainEmployeeBalanceMirror[emp] += salaryPlain;
+            }
 
             processed++;
         }

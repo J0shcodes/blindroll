@@ -20,10 +20,12 @@ async function encryptSalary(
 ): Promise<{ handle: string; proof: string }> {
   const input = fhevm.createEncryptedInput(contractAddress, signer.address);
   input.add64(salaryAmount);
-  const encrypted = await input.encrypt();
+  // const encrypted = await input.encrypt();
+  const {handles, inputProof} = await input.encrypt()
+
   return {
-    handle: encrypted.handles[0],
-    proof: encrypted.inputProof,
+    handle: ethers.hexlify(handles[0]),
+    proof: ethers.hexlify(inputProof),
   };
 }
 
@@ -191,7 +193,7 @@ describe("Blindroll", function () {
       // Bob (another employee) should NOT be able to decrypt Alice's salary
       await expect(
         decryptSalary(contractAddress, bob, salaryHandle)
-      ).to.be.reverted;
+      ).to.be.rejected;
     });
 
     it("stranger cannot decrypt an employee's salary", async function () {
@@ -202,7 +204,7 @@ describe("Blindroll", function () {
 
       await expect(
         decryptSalary(contractAddress, stranger, salaryHandle)
-      ).to.be.reverted;
+      ).to.be.rejected;
     });
 
     it("multiple employees can be added with different salaries", async function () {
@@ -469,7 +471,7 @@ describe("Blindroll", function () {
       const treasuryHandle = await blindroll.connect(employer).getEncryptedTreasuryBalance();
       await expect(
         decryptSalary(contractAddress, stranger, treasuryHandle)
-      ).to.be.reverted;
+      ).to.be.rejected;
     });
 
     it("reverts if deposit amount is zero", async function () {
@@ -568,7 +570,7 @@ describe("Blindroll", function () {
       // Alice should NOT be able to decrypt Bob's balance
       await expect(
         decryptSalary(contractAddress, alice, bobHandle)
-      ).to.be.reverted;
+      ).to.be.rejected;
     });
 
     it("treasury decreases by the correct amount after payroll", async function () {
@@ -690,9 +692,12 @@ describe("Blindroll", function () {
       await blindroll.connect(employer).executePayroll();
 
       // Alice should have no accumulated balance — payment was zero
-      await expect(
-        blindroll.connect(alice).getMyEncryptedBalance()
-      ).to.be.revertedWith("No balance yet");
+      const balanceHandle = await blindroll.connect(alice).getMyEncryptedBalance()
+      const balance = await fhevm.userDecryptEuint(FhevmType.euint64, balanceHandle, contractAddress, alice)
+      expect(balance).to.equal(0)
+      // await expect(
+      //   blindroll.connect(alice).getMyEncryptedBalance()
+      // ).to.be.revertedWith("No balance yet");
     });
 
     it("error code is ERR_INSUFFICIENT_TREASURY when payment was skipped", async function () {
@@ -981,11 +986,11 @@ describe("Blindroll", function () {
 
       // Alice can decrypt her own error
       const [aliceErrHandle] = await blindroll.getLastError(alice.address);
-      await expect(decryptErrorCode(contractAddress, alice, aliceErrHandle)).to.not.be.reverted;
+      await expect(decryptErrorCode(contractAddress, alice, aliceErrHandle)).to.not.be.rejected;
 
       // Alice CANNOT decrypt Bob's error (ACL enforced)
       const [bobErrHandle] = await blindroll.getLastError(bob.address);
-      await expect(decryptErrorCode(contractAddress, alice, bobErrHandle)).to.be.reverted;
+      await expect(decryptErrorCode(contractAddress, alice, bobErrHandle)).to.be.rejected;
     });
   });
 
@@ -1136,7 +1141,7 @@ describe("Blindroll", function () {
       const aliceSalaryHandle = await blindroll.connect(alice).getMyEncryptedSalary();
       await expect(
         decryptSalary(contractAddress, bob, aliceSalaryHandle)
-      ).to.be.reverted;
+      ).to.be.rejected;
 
       // ── Step 8: Treasury reflects total disbursements ─────────────────────
       const treasuryHandle = await blindroll.connect(employer).getEncryptedTreasuryBalance();
