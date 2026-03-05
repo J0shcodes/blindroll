@@ -1,28 +1,73 @@
 "use client";
 
-import { useState } from "react";
-import { usePathname } from "next/navigation";
+import { useState, useEffect } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import { Sidebar } from "@/components/dashboard/Sidebar";
 import { Menu, X } from "lucide-react";
+import { Loader2 } from "lucide-react";
+import { useWallet } from "@/hooks/useWallet";
+import { useContract } from "@/hooks/useContract";
 
 export default function DashboardLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   const pathname = usePathname();
-  const isEmployer = pathname.includes("employer");
-  const userType = isEmployer ? "employer" : "employee";
+  const router = useRouter()
 
+  const {isConnected, isCorrectNetwork, address, shortAddress} = useWallet()
+  const {isEmployer, isEmployee, isRoleLoading} = useContract()
+  // const isEmployer = pathname.includes("employer");
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  const getTitleFromPath = (path: string): string => {
-    const segments = path.split("/").filter(Boolean);
-    if (segments.length <= 1) {
-      return userType === "employer" ? "Overview" : "Overview";
-    }
-    const lastSegment = segments[segments.length - 1];
-    return lastSegment.charAt(0).toUpperCase() + lastSegment.slice(1);
-  };
+  const userType = isEmployer ? "employer" : "employee";
 
-  const title = getTitleFromPath(pathname);
-  console.log(title)
+  const redirectTarget = (() => {
+    if (isRoleLoading) return null
+
+    if (!isConnected) {
+      router.replace("/connect")
+      return
+    }
+
+    const isEmployerPath = pathname.includes("/employer")
+    const isEmployeePath = pathname.includes("/employee")
+
+    if (isEmployerPath && !isEmployer) {
+      if (isEmployee) return "/dashboard/employee"
+    }
+
+    if (isEmployeePath && !isEmployee) {
+      if (isEmployer) return "/dashbord/employer"
+    }
+
+    return null
+  })()
+
+  useEffect(() => {
+    if (!redirectTarget) return
+
+    router.replace(redirectTarget)
+  }, [redirectTarget, router])
+
+  const guardReady = !isRoleLoading && !redirectTarget
+
+  const segments = pathname.split("/").filter(Boolean)
+  const lastSegment = segments[segments.length - 1]
+  const title = 
+    lastSegment === "employer" || lastSegment === "employee" 
+      ? "Overview" 
+      : lastSegment.charAt(0).toUpperCase() + lastSegment.slice(1)
+
+  if (!guardReady) {
+    return (
+      <div className="min-h-screen bg-bg-primary flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4 text-text-secondary">
+          <Loader2 className="w-8 h-8 animate-spin text-accent-purple" />
+          <p className="text-body">Loading…</p>
+        </div>
+      </div>
+    );
+  }
+
+  const showNetworkBanner = isConnected && !isCorrectNetwork;
 
   return (
     <div className="flex h-screen bg-bg-primary">
@@ -43,6 +88,14 @@ export default function DashboardLayout({ children }: Readonly<{ children: React
 
       {/* Main Content */}
       <div className="flex-1 lg:ml-60 flex flex-col">
+        {showNetworkBanner && (
+          <div className="w-full bg-accent-amber/10 border-b border-accent-amber/20 px-4 py-2 text-center">
+            <p className="text-body-sm text-accent-amber">
+              Wrong network — please switch to <strong>Sepolia</strong> in your wallet
+            </p>
+          </div>
+        )}
+
         {/* Top Bar */}
         <div className="h-14 border-b border-border-light bg-bg-primary flex items-center justify-between px-4 lg:px-8 lg:ml-0">
           <div className="flex items-center gap-4 flex-1">
@@ -56,7 +109,7 @@ export default function DashboardLayout({ children }: Readonly<{ children: React
                 <Menu className="w-6 h-6 text-text-primary" />
               )}
             </button>
-            <h1 className="text-h3 font-semibold text-text-primary">{title} Overview</h1>
+            <h1 className="text-h3 font-semibold text-text-primary">{title}</h1>
           </div>
         </div>
 

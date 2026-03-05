@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { Button } from '@/components/Button'
 import { EncryptionVisualizer } from '../EncryptionVisualizer'
 
@@ -31,12 +32,16 @@ export function HeroSection() {
 
             {/* CTAs */}
             <div className="flex flex-col sm:flex-row gap-3 md:gap-4">
-              <Button variant="primary" size="lg" className="min-w-fit">
-                Get Started
-              </Button>
-              <Button variant="secondary" size="lg" className="min-w-fit">
-                View Docs
-              </Button>
+              <Link href="/connect">
+                <Button variant="primary" size="lg" className="min-w-fit">
+                  Get Started
+                </Button>
+              </Link>
+              <a href="https://github.com/J0shcodes/blindroll" target="_blank" rel="noopener noreferrer">
+                <Button variant="secondary" size="lg" className="min-w-fit">
+                  View Docs
+                </Button>
+              </a>
             </div>
 
             {/* Trust signals */}

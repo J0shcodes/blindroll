@@ -13,12 +13,12 @@ export function CTASection() {
         </div>
 
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <Button variant="primary" size="lg">
-            Launch App
-          </Button>
-          <Button variant="secondary" size="lg">
-            <Link href="https://github.com/J0shcodes/blindroll">View on GitHub</Link>
-          </Button>
+          <Link href="/connect">
+            <Button variant="primary" size="lg">Launch App</Button>
+          </Link>
+          <a href="https://github.com/J0shcodes/blindroll" target="_blank" rel="noopener noreferrer">
+            <Button variant="secondary" size="lg">View on GitHub</Button>
+          </a>
         </div>
 
         <p className="text-text-tertiary text-body-sm pt-4">Open source · Testnet · No signup required</p>

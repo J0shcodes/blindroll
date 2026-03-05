@@ -1,6 +1,22 @@
+"use client"
+
+import { useState } from "react";
 import { Card } from "@/components/Card";
+import { ContractAddress } from "@/hooks/useContract";
+import { useContract } from "@/hooks/useContract";
+import AddEmployeeModal from "@/components/dashboard/AddEmployeeModal";
+import RemoveEmployeeModal from "@/components/dashboard/RemoveEmployeModal";
+
+interface EmployeeRowData {
+  address: ContractAddress
+  status: "active" | "inactive"
+  addedAt: string
+}
 
 export default function EmployeesPage() {
+  const { employeeList, employeeCount } = useContract();
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [removeTarget, setRemoveTarget] = useState<string | null>(null);
   return (
     <div className="space-y-6">
       <div>

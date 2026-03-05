@@ -1,6 +1,7 @@
 'use client'
 
-import React, { useState } from 'react'
+import { useState } from 'react'
+import Link from 'next/link'
 import { Logo } from './Logo'
 import { Button } from './Button'
 import { Menu, X } from 'lucide-react'
@@ -12,7 +13,7 @@ export function Navigation() {
   const navItems = [
     { label: 'Docs', href: '#docs' },
     { label: 'About', href: '#about' },
-    { label: 'GitHub', href: '#github' },
+    { label: 'GitHub', href: 'https://github.com/J0shcodes/blindroll' },
   ]
 
   return (
@@ -37,9 +38,12 @@ export function Navigation() {
 
           {/* Desktop CTA */}
           <div className="hidden md:block">
-            <Button variant="primary" size="sm">
-              Launch
-            </Button>
+            <Link href="/connect">
+              <Button variant="primary" size="sm">
+                Launch
+              </Button>
+            </Link>
+            
           </div>
 
           {/* Mobile Menu Button */}
@@ -70,9 +74,9 @@ export function Navigation() {
               </a>
             ))}
             <div className="px-4 pt-4 border-t border-border-light">
-              <Button variant="primary" fullWidth size="sm">
-                Launch
-              </Button>
+              <Link href="/connect">
+                <Button variant="primary" fullWidth size="sm">Launch</Button>
+              </Link>
             </div>
           </div>
         )}
