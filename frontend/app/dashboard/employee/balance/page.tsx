@@ -3,30 +3,96 @@
 import { useState } from "react";
 import { Button } from "@/components/Button";
 import { Card, CardContent, CardHeader } from "@/components/Card";
-import { Input } from "@/components/Input";
 import { EncryptedValueDisplay } from "@/components/EncryptedValueDisplay";
 import { TimelineItem } from "@/components/TimelineItem";
-import { Download, TrendingUp, CheckCircle } from "lucide-react";
+import { useContract } from "@/hooks/useContract";
+import { useFhevm } from "@/hooks/useFhevm";
+import { BLINDROLL_ABI } from "@/abi/abi";
+import { 
+  Download, AlertCircle, CheckCircle, ExternalLink, Loader2, Eye, Copy, Lock
+} from "lucide-react";
+
+function formatEth(wei: bigint): string {
+  const eth = Number(wei) / 1e18
+  return eth.toLocaleString(undefined, {minimumFractionDigits: 4, maximumFractionDigits: 6}) + " ETH"
+}
 
 export default function BalancePage() {
-  const [showWithdrawForm, setShowWithdrawForm] = useState(false);
-  const [withdrawAmount, setWithdrawAmount] = useState("");
-  const [withdrawSuccess, setWithdrawSuccess] = useState(false);
+  const {
+    contractAddress,
+    encryptedBalanceHandle,
+    mutateAsync,
+    isPending,
+    isConfirmed,
+    isConfirming,
+    txHash,
+    writeError
+  } = useContract()
+
+  const { isReady: fhevmReady, userDecrypt } = useFhevm();
+
+  const [balance, setBalance] = useState<string | null>(null);
+  const [decryptingBalance, setDecryptingBalance] = useState(false);
+  const [balanceError, setBalanceError] = useState<string | null>(null);
+
+  const [step, setStep] = useState<"idle" | "signing" | "confirming">("idle");
+  const [error, setError] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+
+  const isError = !!writeError
+
+  async function handleDecryptBalance() {
+    if (!encryptedBalanceHandle || !contractAddress) return
+    setDecryptingBalance(true)
+    setBalanceError(null)
+
+    try {
+      const raw = await userDecrypt(encryptedBalanceHandle, contractAddress)
+      if (typeof raw === "bigint") {
+        setBalance(formatEth(raw))
+      } else {
+        setBalanceError("Unexpected decryption result")
+      }
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setDecryptingBalance(false)
+    }
+  }
+
+  async function handleWithdraw() {
+    if (!contractAddress) return
+    setError(null)
+    setStep("signing")
+
+    try {
+      await mutateAsync({
+        address: contractAddress,
+        abi: BLINDROLL_ABI,
+        functionName: "withdraw"
+      })
+      setStep("confirming")
+    } catch (error) {
+      console.log(error)
+    }
+  }
+
+  function handleCopyHash() {
+    if (!txHash) return;
+    navigator.clipboard.writeText(txHash);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
 
   const withdrawalHistory = [
     {
-      timestamp: "2024-02-10 10:30 UTC",
-      title: "Withdrawal Completed",
-      description: "Successfully withdrew 1.2 ETH to your wallet",
-    },
-    {
-      timestamp: "2024-01-15 09:45 UTC",
-      title: "Withdrawal Completed",
-      description: "Successfully withdrew 2.3 ETH to your wallet",
+      timestamp: "On-chain event indexing not yet implemented",
+      title: "Withdrawal history",
+      description: "Previous withdrawals will appear here once event indexing is added",
     },
   ];
 
-  if (withdrawSuccess) {
+  if (isConfirmed) {
     return (
       <div className="max-w-2xl mx-auto space-y-8">
         <div className="text-center space-y-6 py-12">
@@ -35,32 +101,44 @@ export default function BalancePage() {
               <CheckCircle className="w-10 h-10 text-accent-green" />
             </div>
           </div>
-
           <div className="space-y-2">
-            <h1 className="text-h1 font-bold text-text-primary">Withdrawal Requested</h1>
-            <p className="text-body text-text-secondary">Your withdrawal request has been submitted</p>
+            <h1 className="text-h1 font-bold text-text-primary">Withdrawal Complete</h1>
+            <p className="text-body text-text-secondary">
+              Your full balance has been sent to your wallet.
+            </p>
           </div>
 
-          <div className="bg-bg-secondary border border-border-light rounded-lg p-6 space-y-4">
-            <div className="space-y-2">
-              <p className="text-body-sm text-text-secondary">Amount</p>
-              <p className="text-h2 font-bold text-text-primary">{withdrawAmount} ETH</p>
-            </div>
+          <div className="bg-bg-secondary border border-border-light rounded-lg p-6 space-y-4 text-left">
+            {txHash && (
+              <>
+                <div className="space-y-2">
+                  <p className="text-body-sm text-text-secondary">Transaction Hash</p>
+                  <div className="flex items-center gap-3">
+                    <code className="flex-1 font-mono text-body-sm text-text-primary bg-bg-tertiary p-3 rounded-lg break-all">
+                      {txHash}
+                    </code>
+                    <button onClick={handleCopyHash} className="p-2 hover:bg-bg-tertiary rounded-lg transition-colors">
+                      <Copy className="w-4 h-4 text-text-secondary" />
+                    </button>
+                  </div>
+                  {copied && <p className="text-body-sm text-accent-green">Copied!</p>}
+                </div>
+              </>
+            )}
 
-            <div className="space-y-2">
-              <p className="text-body-sm text-text-secondary">Status</p>
-              <p className="text-body font-medium text-text-primary">Processing...</p>
-            </div>
-
-            <div className="pt-4 border-t border-border-light">
-              <Button
-                variant="tertiary"
-                fullWidth
-                onClick={() => {
-                  setShowWithdrawForm(false);
-                  setWithdrawSuccess(false);
-                }}
-              >
+            <div className="pt-4 border-t border-border-light space-y-2">
+              {txHash && (
+                <a
+                  href={`https://sepolia.etherscan.io/tx/${txHash}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <Button variant="secondary" fullWidth className="gap-2">
+                    <ExternalLink className="w-4 h-4" /> View on Etherscan
+                  </Button>
+                </a>
+              )}
+              <Button variant="tertiary" fullWidth onClick={() => { setStep("idle"); setBalance(null); }}>
                 Back to Balance
               </Button>
             </div>
@@ -70,50 +148,33 @@ export default function BalancePage() {
     );
   }
 
-  if (showWithdrawForm) {
+  if (step === "signing" || step === "confirming") {
     return (
-      <div className="max-w-2xl mx-auto space-y-6">
-        <div>
-          <h1 className="text-h2 font-bold text-text-primary">Withdraw Funds</h1>
-          <p className="text-text-secondary text-body mt-2">Enter the amount you wish to withdraw to your wallet</p>
-        </div>
-
+      <div className="max-w-2xl mx-auto">
         <Card>
-          <CardContent className="space-y-6">
-            <EncryptedValueDisplay value="[ENCRYPTED]" decrypted="3.5 ETH ($12,250)" label="Available Balance" />
-
-            <div className="pt-6 border-t border-border-light space-y-4">
-              <Input
-                label="Withdrawal Amount (ETH)"
-                type="number"
-                placeholder="1.0"
-                step="0.1"
-                value={withdrawAmount}
-                onChange={(e) => setWithdrawAmount(e.target.value)}
-              />
-
-              <div className="space-y-2">
-                <p className="text-body-sm text-text-secondary">Estimated Fee: ~0.001 ETH</p>
+          <CardContent className="py-16 space-y-6">
+            <div className="flex flex-col items-center gap-4 text-center">
+              <Loader2 className="w-10 h-10 text-accent-purple animate-spin" />
+              <div className="space-y-1">
+                <p className="text-body font-semibold text-text-primary">
+                  {step === "signing" ? "Waiting for wallet signature…" : "Confirming on Sepolia…"}
+                </p>
                 <p className="text-body-sm text-text-secondary">
-                  You will receive: {parseFloat(withdrawAmount || "0") - 0.001} ETH
+                  {step === "signing"
+                    ? "Confirm the withdrawal in your wallet"
+                    : "Transaction submitted — awaiting block confirmation"}
                 </p>
               </div>
-
-              <div className="bg-accent-blue/5 border border-accent-blue/20 rounded-lg p-4">
-                <p className="text-body-sm text-accent-blue">
-                  ℹ️ Funds will be sent to your connected wallet on Ethereum Sepolia. Allow up to 5 minutes for
-                  confirmation.
-                </p>
-              </div>
-
-              <div className="flex gap-3 pt-4">
-                <Button variant="primary" fullWidth disabled={!withdrawAmount} onClick={() => setWithdrawSuccess(true)}>
-                  Confirm Withdrawal
-                </Button>
-                <Button variant="secondary" fullWidth onClick={() => setShowWithdrawForm(false)}>
-                  Cancel
-                </Button>
-              </div>
+              {step === "confirming" && txHash && (
+                <a
+                  href={`https://sepolia.etherscan.io/tx/${txHash}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-1.5 text-body-sm text-accent-purple hover:underline"
+                >
+                  View on Etherscan <ExternalLink className="w-3.5 h-3.5" />
+                </a>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -123,43 +184,113 @@ export default function BalancePage() {
 
   return (
     <div className="space-y-8 max-w-2xl">
-      {/* Current Balance */}
+      <div>
+        <h1 className="text-h2 font-bold text-text-primary">My Balance</h1>
+        <p className="text-text-secondary text-body mt-1">
+          View and withdraw your accumulated payroll balance.
+        </p>
+      </div>
+
+      {/* Error banner */}
+      {isError && (
+        <div className="flex items-start gap-3 p-4 rounded-lg bg-accent-red/10 border border-accent-red/20">
+          <AlertCircle className="w-5 h-5 text-accent-red shrink-0 mt-0.5" />
+          <div>
+            <p className="text-body-sm font-medium text-accent-red">Withdrawal failed</p>
+            <p className="text-body-sm text-accent-red/80">{error}</p>
+          </div>
+        </div>
+      )}
+
+      {/* Balance card */}
       <Card>
         <CardHeader>
-          <h2 className="text-h2 font-bold text-text-primary">Available Balance</h2>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <EncryptedValueDisplay value="[ENCRYPTED]" decrypted="3.5 ETH ($12,250)" label="Total Available" />
-
-          <div className="pt-6 border-t border-border-light">
-            <Button variant="primary" fullWidth size="lg" className="gap-2" onClick={() => setShowWithdrawForm(true)}>
-              <Download className="w-4 h-4" />
-              Withdraw Funds
-            </Button>
+          <div className="flex items-center justify-between">
+            <h2 className="text-h3 font-semibold text-text-primary">Available Balance</h2>
           </div>
+        </CardHeader>
+        <CardContent className="space-y-5">
+          <EncryptedValueDisplay
+            value="[ENCRYPTED]"
+            decrypted={balance ?? undefined}
+            label="Balance (ETH)"
+          />
+
+          {balanceError && (
+            <p className="text-body-sm text-accent-red flex items-center gap-1.5">
+              <AlertCircle className="w-4 h-4" /> {balanceError}
+            </p>
+          )}
+
+          {!balance && encryptedBalanceHandle && (
+            <Button
+              variant="secondary"
+              size="sm"
+              className="gap-2"
+              onClick={handleDecryptBalance}
+              disabled={decryptingBalance || !fhevmReady}
+            >
+              {decryptingBalance ? (
+                <><Loader2 className="w-4 h-4 animate-spin" /> Decrypting…</>
+              ) : (
+                <><Eye className="w-4 h-4" /> Decrypt Balance</>
+              )}
+            </Button>
+          )}
+
+          <p className="text-caption text-text-tertiary flex items-center gap-1.5">
+            <Lock className="w-3 h-3" />
+            Your balance is encrypted on-chain — only you can decrypt it
+          </p>
         </CardContent>
       </Card>
 
-      {/* Withdrawal History */}
-      <div className="space-y-6">
-        <h2 className="text-h2 font-bold text-text-primary">Withdrawal History</h2>
-        <Card>
-          <CardContent>
-            <div className="space-y-4">
-              {withdrawalHistory.map((withdrawal, idx) => (
-                <TimelineItem
-                  key={idx}
-                  timestamp={withdrawal.timestamp}
-                  title={withdrawal.title}
-                  description={withdrawal.description}
-                  icon={<TrendingUp className="w-4 h-4" />}
-                  isLast={idx === withdrawalHistory.length - 1}
-                />
-              ))}
+      {/* Withdraw card */}
+      <Card>
+        <CardHeader>
+          <h2 className="text-h3 font-semibold text-text-primary">Withdraw</h2>
+        </CardHeader>
+        <CardContent className="space-y-5">
+          <p className="text-body text-text-secondary">
+            Withdraw your full accumulated balance to your connected wallet. This sends all
+            accrued ETH in a single transaction.
+          </p>
+
+          <div className="flex items-center gap-3 p-4 rounded-lg bg-bg-tertiary border border-border-light">
+            <Download className="w-5 h-5 text-accent-purple shrink-0" />
+            <div>
+              <p className="text-body-sm font-medium text-text-primary">Full balance withdrawal</p>
+              <p className="text-body-sm text-text-secondary">
+                100% of your balance will be sent to your wallet
+              </p>
             </div>
-          </CardContent>
-        </Card>
-      </div>
+          </div>
+
+          <Button
+            variant="primary"
+            fullWidth
+            onClick={handleWithdraw}
+            disabled={isPending || !contractAddress}
+          >
+            {isPending
+              ? <><Loader2 className="w-4 h-4 animate-spin mr-2" /> Processing…</>
+              : "Withdraw Balance"}
+          </Button>
+        </CardContent>
+      </Card>
+
+      {/* History */}
+      <Card>
+        <CardContent className="space-y-4">
+          <h2 className="text-h3 font-semibold text-text-primary">Withdrawal History</h2>
+          <div className="space-y-2">
+            {withdrawalHistory.map((item, i) => (
+              <TimelineItem key={i} {...item} />
+            ))}
+          </div>
+        </CardContent>
+      </Card>
     </div>
+
   );
 }

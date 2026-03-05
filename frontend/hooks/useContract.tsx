@@ -27,7 +27,7 @@ export interface UseContractReturn {
 
     isPending: boolean
 
-    isConfiming: boolean
+    isConfirming: boolean
 
     isConfirmed: boolean
     txHash: `0x${string}` | undefined
@@ -135,7 +135,7 @@ export function useContract(): UseContractReturn {
 
 export interface UseEmployeeStatusReturn {
     isActive: boolean;
-    addedAt: Date;
+    addedAt: Date | undefined;
     isLoading: boolean;
 }
 

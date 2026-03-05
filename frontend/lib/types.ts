@@ -1,5 +1,7 @@
 /* Shared TypeScript interfaces and types for Blindroll UI */
 
+import { EmployeeRowData } from "@/app/dashboard/employer/employees/page";
+
 export interface Employee {
   id: string;
   walletAddress: string;
@@ -81,13 +83,13 @@ export interface InputProps
 export interface TableColumn<T> {
   key: keyof T;
   header: string;
-  render?: (value: unknown, row: T) => React.ReactNode;
+  render?: (value: unknown, row: EmployeeRowData) => React.ReactNode;
   className?: string;
 }
 
 export interface TableProps<T> {
   columns: TableColumn<T>[];
-  data: T[];
+  data: EmployeeRowData[];
   rowKey?: keyof T;
   onRowClick?: (row: T) => void;
   className?: string;
