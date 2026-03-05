@@ -4,7 +4,7 @@ pragma solidity ^0.8.24;
 import { FHE, euint64, euint8, ebool, externalEuint64, externalEuint8 } from "@fhevm/solidity/lib/FHE.sol";
 import { ZamaEthereumConfig } from "@fhevm/solidity/config/ZamaConfig.sol";
 
-contract PrivaPayroll is ZamaEthereumConfig {
+contract Blindroll is ZamaEthereumConfig {
 
     // ── CONSTANTS ─────────────────────────────────────────────────────────────
 
@@ -165,14 +165,14 @@ contract PrivaPayroll is ZamaEthereumConfig {
         _plainSalaryMirror[emp] = amountInWei;
     }
 
-    function deactivateEmployee(emp address) external onlyEmployer employeeExists(emp) {
+    function deactivateEmployee(address emp) external onlyEmployer employeeExists(emp) {
         _employees[emp].isActive = false;
-        emit EmployeeDeactivated(emp, block.timestamp)
+        emit EmployeeDeactivated(emp, block.timestamp);
     }
 
-    function reactivateEmployee(emp address) external onlyEmployer employeeExists(emp) {
+    function reactivateEmployee(address emp) external onlyEmployer employeeExists(emp) {
         _employees[emp].isActive = true;
-        emit EmployeeReactivated(emp, block.timestamp)
+        emit EmployeeReactivated(emp, block.timestamp);
     }
 
     /// @notice Employer deposits ETH into the payroll treasury.
@@ -187,11 +187,11 @@ contract PrivaPayroll is ZamaEthereumConfig {
             _encryptedTreasuryBalance = amount;
             _treasuryInitialized = true;
         } else {
-            _encryptedTreasuryBalance = FHE.add(_encryptedTreasuryBalance, amount)
+            _encryptedTreasuryBalance = FHE.add(_encryptedTreasuryBalance, amount);
         }
 
         FHE.allowThis(_encryptedTreasuryBalance);
-        FHE.allowThis(_encryptedTreasuryBalance, employer);
+        FHE.allow(_encryptedTreasuryBalance, employer);
 
         _plainTreasuryBalance += msg.value;
 
@@ -257,13 +257,13 @@ contract PrivaPayroll is ZamaEthereumConfig {
     /// @dev Caller's frontend decrypts via:
     ///      fhevm.userDecryptEuint(FhevmType.euint64, handle, contractAddress, signer)
     function getMyEncryptedSalary() external view onlyEmployee returns (euint64) {
-        return _employee[msg.sender].encryptedSalary;
+        return _employees[msg.sender].encryptedSalary;
     }
 
     /// @notice Returns the caller's encrypted accumulated balance handle.
-    function getMyEncryptedBalance() external view onlEmployee returns (euint64) {
-        require(_employee[msg.sender].balancedInitialized, "No balance yet");
-        return _employee[msg.sender].encryptedBalance;
+    function getMyEncryptedBalance() external view onlyEmployee returns (euint64) {
+        require(_employees[msg.sender].balanceInitialized, "No balance yet");
+        return _employees[msg.sender].encryptedBalance;
     }
 
     /// @notice Employee withdraws their full accumulated balance as ETH.
@@ -312,17 +312,17 @@ contract PrivaPayroll is ZamaEthereumConfig {
     }
 
     function getIsEmployeeActive(address emp) external view returns (bool) {
-        return _employee[emp].isActive;
+        return _employees[emp].isActive;
     }
 
     function getEmployeeAddedAt(address emp) external view returns (uint256) {
-        return _employee[emp].addedAt;
+        return _employees[emp].addedAt;
     }
 
     /// @notice Returns encrypted error code for an address.
     /// @dev Error codes: 0=OK, 1=Insufficient treasury, 2=Zero balance, 3=Not active
     ///      Frontend decrypts errorCode using fhEVM SDK to display human-readable message.
-    function getLastError(address addr) external view returns (euint8, errorCode, uint256 timestamp) {
+    function getLastError(address addr) external view returns (euint8 errorCode, uint256 timestamp) {
         LastError memory err = _lastErrors[addr];
         return (err.errorCode, err.timestamp);
     }
@@ -334,14 +334,14 @@ contract PrivaPayroll is ZamaEthereumConfig {
     ///      2. allow(employer) — employer can decrypt for verification
     ///      3. allow(emp)      — employee can decrypt their own salary
     function _grantSalaryAccess(address emp) internal {
-        euint64 salary = _employee[emp].encryptedSalary;
+        euint64 salary = _employees[emp].encryptedSalary;
         FHE.allowThis(salary);
         FHE.allow(salary, employer);
         FHE.allow(salary, emp);
     }
 
     function _grantBalanceAccess(address emp) internal {
-        euint64 balance = _employee[emp].encryptedBalance;
+        euint64 balance = _employees[emp].encryptedBalance;
         FHE.allowThis(balance);
         FHE.allow(balance, employer);
         FHE.allow(balance, emp);
