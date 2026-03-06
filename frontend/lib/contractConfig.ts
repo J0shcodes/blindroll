@@ -58,7 +58,7 @@ export function clearContractAddress(): void {
     try {
         localStorage.removeItem(LS_KEY)
     } catch (error) {
-        
+        console.error(error)
     }
 }
 

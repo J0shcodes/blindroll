@@ -1,16 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { Logo } from "@/components/Logo";
 import { WalletAddress } from "@/components/WalletAddress";
+import { useWallet } from "@/hooks/useWallet";
+import { useContract } from "@/hooks/useContract";
+import { clearContractAddress } from "@/lib/contractConfig";
 import { cn } from "@/lib/cn";
 import { BarChart3, Send, Users, Wallet, Settings, Eye, DollarSign, LogOut } from "lucide-react";
-
-interface SidebarProps {
-  userType: "employer" | "employee";
-  walletAddress?: string;
-}
 
 const employerNavigation = [
   { icon: BarChart3, label: "Overview", href: "/dashboard/employer" },
@@ -26,9 +24,24 @@ const employeeNavigation = [
   { icon: Wallet, label: "My Balance", href: "/dashboard/employee/balance" },
 ];
 
-export function Sidebar({ userType, walletAddress = "0x1234...5678" }: SidebarProps) {
+export function Sidebar() {
+  const {shortAddress, disconnectWallet} = useWallet()
+  const {isEmployer} = useContract()
+
+
   const pathname = usePathname();
-  const navigation = userType === "employer" ? employerNavigation : employeeNavigation;
+  const router = useRouter()
+
+
+  const navigation = isEmployer ? employerNavigation : employeeNavigation;
+
+  async function handleDisconnect() {
+    await disconnectWallet()
+
+    clearContractAddress()
+
+    router.push("/connect")
+  }
 
   return (
     <div className="w-60 bg-bg-secondary border-r border-border-light h-screen flex flex-col fixed left-0 top-0 pt-4 md:pt-6 overflow-y-auto">
@@ -38,10 +51,10 @@ export function Sidebar({ userType, walletAddress = "0x1234...5678" }: SidebarPr
       </Link>
 
       {/* Wallet Connection */}
-      {walletAddress && (
+      {shortAddress && (
         <div className="px-6 mb-8 pb-6 border-b border-border-light space-y-2">
           <p className="text-caption text-text-tertiary">Connected Wallet</p>
-          <WalletAddress address={walletAddress} connected showIndicator className="text-body-sm" />
+          <WalletAddress address={shortAddress} connected showIndicator className="text-body-sm" />
         </div>
       )}
 
@@ -75,7 +88,10 @@ export function Sidebar({ userType, walletAddress = "0x1234...5678" }: SidebarPr
           <div className="w-2 h-2 rounded-full bg-accent-amber animate-pulse" />
           <span className="text-caption text-text-secondary font-mono">Sepolia Testnet</span>
         </div>
-        <button className="w-full flex items-center justify-center gap-2 px-4 py-2 text-body-sm text-text-secondary hover:text-text-primary transition-colors">
+        <button
+          onClick={handleDisconnect}
+          className="w-full flex items-center justify-center gap-2 px-4 py-2 text-body-sm text-text-secondary hover:text-text-primary transition-colors"
+        >
           <LogOut className="w-4 h-4" />
           <span>Disconnect</span>
         </button>

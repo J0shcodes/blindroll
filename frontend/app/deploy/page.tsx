@@ -85,7 +85,7 @@ export default function DeployPage() {
     }
 
     function handleGoToDashboard() {
-        router.replace("/dashbord/emplyer")
+        router.replace("/dashboard/employer")
     }
 
     return (

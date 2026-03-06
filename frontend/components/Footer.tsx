@@ -69,7 +69,7 @@ export function Footer() {
 
         {/* Bottom Bar */}
         <div className="pt-12 border-t border-border-light flex flex-col sm:flex-row items-center justify-between gap-4 text-body-sm text-text-secondary">
-          <p>© 2024 Blindroll. All rights reserved.</p>
+          <p>© 2026 Blindroll. All rights reserved.</p>
           <p>
             Licensed under{" "}
             <a href="#" className="text-accent-purple hover:underline">

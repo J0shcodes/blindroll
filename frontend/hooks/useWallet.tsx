@@ -10,13 +10,13 @@ export interface UseWalletReturn {
     isDisconnected: boolean
     chainId: number | undefined
     isCorrectNetwork: boolean
-    disconnect: () => void
+    disconnectWallet: () => Promise<void>
     shortAddress: string | undefined
 }
 
 export function useWallet(): UseWalletReturn {
     const {address, isConnected, isConnecting, isDisconnected} = useConnection()
-    const {disconnect} = useDisconnect()
+    const {mutateAsync: disconnect} = useDisconnect()
 
     const chainId = useChainId()
 
@@ -24,15 +24,19 @@ export function useWallet(): UseWalletReturn {
 
     const shortAddress = address ? `${address.slice(0, 6)}...${address.slice(-4)}` : undefined
 
+    async function disconnectWallet() {
+        await disconnect()
+    }
+
     return {
-        address,
-        isConnected,
-        isConnecting,
-        isDisconnected,
-        chainId,
-        isCorrectNetwork,
-        disconnect,
-        shortAddress
+      address,
+      isConnected,
+      isConnecting,
+      isDisconnected,
+      chainId,
+      isCorrectNetwork,
+      disconnectWallet,
+      shortAddress
     }
     
 }

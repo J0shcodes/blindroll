@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { initSDK, createInstance, SepoliaConfig } from "@zama-fhe/relayer-sdk/bundle";
+// import { initSDK, createInstance, SepoliaConfig } from "@zama-fhe/relayer-sdk/bundle";
 import type { FhevmInstance } from "@zama-fhe/relayer-sdk/bundle";
 import { Eip1193Provider } from "ethers";
 import { useGetEthersSigner } from "./useEthersSigner";
@@ -105,15 +105,6 @@ export function useFhevm(): UseFhevmReturn {
   useEffect(() => {
     const cancelled = false
 
-    // if (!isConnected || !isCorrectNetwork) {
-    //   setIsReady(false);
-    //   setInstance(undefined);
-    //   return;
-    // }
-
-    // if (initAttempted.current) return;
-    // initAttempted.current = true;
-
     const init = async () => {
 
       if (!isConnected || !isCorrectNetwork) {
@@ -128,6 +119,10 @@ export function useFhevm(): UseFhevmReturn {
       initAttempted.current = true;
 
       try {
+        const sdk = await import("@zama-fhe/relayer-sdk/bundle")
+        
+        const {initSDK, createInstance, SepoliaConfig} = sdk
+        
         // Load WASM — must complete before createInstance is called
         await initSDK();
 

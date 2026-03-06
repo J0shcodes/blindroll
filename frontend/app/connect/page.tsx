@@ -18,7 +18,7 @@ type Role = "employer" | "employee";
 export default function ConnectPage() {
     const router = useRouter()
     const {open} = useAppKit()
-    const {isConnected, isConnecting, isCorrectNetwork, address} = useWallet()
+    const {isConnected, isConnecting, isCorrectNetwork} = useWallet()
     const {isEmployer, isEmployee, isRoleLoading, isConfigured} = useContract()
 
     const [selectedRole, setSelectedRole] = useState<Role | null>(null);
@@ -73,7 +73,7 @@ export default function ConnectPage() {
     }
 
     function handleConnectWallet() {
-        open()
+      open()
     }
 
     function handleContractSubmit() {
