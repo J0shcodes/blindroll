@@ -9,7 +9,7 @@ import RemoveEmployeeModal from "@/components/dashboard/RemoveEmployeModal";
 import { Button } from "@/components/Button";
 import { Plus, Users, UserX } from "lucide-react";
 import { DataTable } from "@/components/DataTable";
-import { EmployeeAddedAtCell, EmployeeStatusCell } from "@/components/ui/EmployeesCell";
+import { AddedAtCell, StatusCell } from "@/components/ui/EmployeesCell";
 
 export interface EmployeeRowData {
   address: ContractAddress
@@ -70,12 +70,12 @@ export default function EmployeesPage() {
               {
                 key: "status",
                 header: "Status",
-                render: (_, row) => <EmployeeStatusCell address={(row as EmployeeRowData).address} />,
+                render: (_, row) => <StatusCell address={(row as EmployeeRowData).address} />,
               },
               {
                 key: "addedAt",
                 header: "Added",
-                render: (_, row) => <EmployeeAddedAtCell address={(row as EmployeeRowData).address} />,
+                render: (_, row) => <AddedAtCell address={(row as EmployeeRowData).address} />,
               },
               {
                 key: "address",

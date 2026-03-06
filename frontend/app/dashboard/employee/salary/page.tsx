@@ -9,11 +9,7 @@ import { TimelineItem } from "@/components/TimelineItem";
 import { useContract } from "@/hooks/useContract";
 import { useFhevm } from "@/hooks/useFhevm";
 import { DollarSign, Eye, Loader2, AlertCircle, Lock } from "lucide-react";
-
-function formatEth(wei: bigint): string {
-  const eth = Number(wei) / 1e18
-  return eth.toLocaleString(undefined, {minimumFractionDigits: 4, maximumFractionDigits: 6}) + " ETH"
-}
+import formatEth from "@/lib/formatEth";
 
 export default function SalaryPage() {
   const {

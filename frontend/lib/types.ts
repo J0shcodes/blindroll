@@ -89,7 +89,7 @@ export interface TableColumn<T> {
 
 export interface TableProps<T> {
   columns: TableColumn<T>[];
-  data: EmployeeRowData[];
+  data: EmployeeRowData[] | {address: `0x${string}`}[];
   rowKey?: keyof T;
   onRowClick?: (row: T) => void;
   className?: string;

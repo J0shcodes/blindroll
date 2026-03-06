@@ -11,11 +11,7 @@ import { BLINDROLL_ABI } from "@/abi/abi";
 import { 
   Download, AlertCircle, CheckCircle, ExternalLink, Loader2, Eye, Copy, Lock
 } from "lucide-react";
-
-function formatEth(wei: bigint): string {
-  const eth = Number(wei) / 1e18
-  return eth.toLocaleString(undefined, {minimumFractionDigits: 4, maximumFractionDigits: 6}) + " ETH"
-}
+import formatEth from "@/lib/formatEth";
 
 export default function BalancePage() {
   const {

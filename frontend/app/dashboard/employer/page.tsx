@@ -1,102 +1,66 @@
 "use client"
 
+import { useState } from "react";
+import Link from "next/link";
 import { Button } from "@/components/Button";
 import { Card, CardContent, CardHeader } from "@/components/Card";
 import { StatCard } from "@/components/StatCard";
 import { DataTable } from "@/components/DataTable";
-import { TimelineItem } from "@/components/TimelineItem";
-import { StatusPill } from "@/components/StatusPill";
 import { EncryptedValueDisplay } from "@/components/EncryptedValueDisplay";
-import { Users, Wallet, Clock, Calendar, MoreVertical, Plus, TrendingUp } from "lucide-react";
-
-interface Employee {
-  id: string;
-  address: string;
-  status: "active" | "inactive" | "pending";
-  salary: string;
-  balance: string;
-  added: string;
-}
+import { AddedAtCell, StatusCell } from "@/components/ui/EmployeesCell";
+import { useContract, ContractAddress } from "@/hooks/useContract";
+import { useFhevm } from "@/hooks/useFhevm";
+import { useWallet } from "@/hooks/useWallet";
+import { 
+  Users, Wallet, Send, Plus, Eye, EyeOff, 
+  Loader2, AlertCircle, ExternalLink, Copy, CheckCircle
+} from "lucide-react";
 
 export default function EmployeeOverview() {
-  const employees: Employee[] = [
-    {
-      id: "1",
-      address: "0x1234...5678",
-      status: "active",
-      salary: "[ENCRYPTED]",
-      balance: "[ENCRYPTED]",
-      added: "2024-01-15",
-    },
-    {
-      id: "2",
-      address: "0x2345...6789",
-      status: "active",
-      salary: "[ENCRYPTED]",
-      balance: "[ENCRYPTED]",
-      added: "2024-01-20",
-    },
-    {
-      id: "3",
-      address: "0x3456...7890",
-      status: "inactive",
-      salary: "[ENCRYPTED]",
-      balance: "[ENCRYPTED]",
-      added: "2024-02-01",
-    },
-    {
-      id: "4",
-      address: "0x4567...8901",
-      status: "active",
-      salary: "[ENCRYPTED]",
-      balance: "[ENCRYPTED]",
-      added: "2024-02-05",
-    },
-    {
-      id: "5",
-      address: "0x5678...9012",
-      status: "active",
-      salary: "[ENCRYPTED]",
-      balance: "[ENCRYPTED]",
-      added: "2024-02-10",
-    },
-    {
-      id: "6",
-      address: "0x6789...0123",
-      status: "pending",
-      salary: "[ENCRYPTED]",
-      balance: "[ENCRYPTED]",
-      added: "2024-02-15",
-    },
-  ];
+  const {address} = useWallet()
+  const {
+    contractAddress,
+    employeeCount,
+    employeeList,
+    encryptedTreasuryHandle,
+  } = useContract()
 
-  const activities = [
-    {
-      timestamp: "2024-02-20 14:32 UTC",
-      title: "Payroll Executed",
-      description: "Monthly payroll processed for 6 employees",
-    },
-    {
-      timestamp: "2024-02-15 10:15 UTC",
-      title: "Treasury Funded",
-      description: "Received 50 ETH to treasury wallet",
-    },
-    {
-      timestamp: "2024-02-10 09:00 UTC",
-      title: "Employee Deactivated",
-      description: "0x5678...9012 marked as inactive",
-    },
-    {
-      timestamp: "2024-02-05 16:45 UTC",
-      title: "Salary Updated",
-      description: "0x4567...8901 salary adjusted",
-    },
-    {
-      timestamp: "2024-01-31 11:20 UTC",
-      title: "Employee Added",
-      description: "0x6789...0123 added to payroll",
-    },
-  ];
+  const { isReady: fhevmReady, userDecrypt } = useFhevm();
+
+  // Treasury decrypt state
+  const [treasury, setTreasury] = useState<string | null>(null);
+  const [decryptingTreasury, setDecryptingTreasury] = useState(false);
+  const [treasuryError, setTreasuryError] = useState<string | null>(null);
+
+  // Contract address copy
+  const [copied, setCopied] = useState(false);
+
+  async function handleDecryptTreasury() {
+    if (!encryptedTreasuryHandle || !contractAddress) return
+    setDecryptingTreasury(true)
+    setTreasuryError(null)
+    try {
+      const raw = await userDecrypt(encryptedTreasuryHandle, contractAddress)
+
+      if (typeof raw === "bigint") {
+        const eth = Number(raw) / 1e18
+        setTreasury(eth.toLocaleString(undefined, {minimumFractionDigits: 4, maximumFractionDigits: 6}) + "ETH")
+      }
+    } catch (error) {
+      setTreasuryError("Decryption failed")
+    } finally {
+      setDecryptingTreasury(false)
+    }
+  }
+
+  function handleCopyContract() {
+    if (!contractAddress) return;
+    navigator.clipboard.writeText(contractAddress);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
+
+  const employees = (employeeList ?? []).map((addr) => ({ address: addr }));
 
   return (
     <div className="space-y-8">
@@ -104,102 +68,202 @@ export default function EmployeeOverview() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard
           icon={<Users className="w-6 h-6" />}
-          value="6"
+          value={employeeCount !== undefined ? employeeCount.toString() : "..."}
           label="Active Employees"
           subtext="2 pending activation"
         />
         <StatCard
           icon={<Wallet className="w-6 h-6" />}
-          value="[ENCRYPTED]"
+          value={treasury ?? "[ENCRYPTED]"}
           label="Treasury Balance"
           subtext="Sufficient for payroll"
         />
-        <StatCard icon={<Clock className="w-6 h-6" />} value="2024-01-20" label="Last Payroll" subtext="31 days ago" />
-        <StatCard
-          icon={<Calendar className="w-6 h-6" />}
-          value="2024-03-20"
-          label="Next Payroll"
-          subtext="In 28 days"
+        <StatCard 
+          icon={<Send className="w-6 h-6" />} 
+          value="-" 
+          label="Last Payroll" 
+          subtext="No event indexing yet" 
         />
       </div>
 
+      {!treasury && encryptedTreasuryHandle && (
+        <div className="flex items-center gap-3">
+          <Button
+            variant="secondary"
+            size="sm"
+            className="gap-2"
+            onClick={handleDecryptTreasury}
+            disabled={decryptingTreasury || !fhevmReady}
+          >
+            {decryptingTreasury ? (
+              <><Loader2 className="w-4 h-4 animate-spin" /> Decrypting treasury…</>
+            ) : (
+              <><Eye className="w-4 h-4" /> Decrypt Treasury Balance</>
+            )}
+          </Button>
+          {treasuryError && (
+            <p className="text-body-sm text-accent-red flex items-center gap-1.5">
+              <AlertCircle className="w-4 h-4" /> {treasuryError}
+            </p>
+          )}
+        </div>
+      )}
+
+      {treasury && (
+        <button
+          onClick={() => setTreasury(null)}
+          className="flex items-center gap-1.5 text-body-sm text-text-tertiary hover:text-text-secondary transition-colors"
+        >
+          <EyeOff className="w-4 h-4" /> Hide balance
+        </button>
+      )}
+
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <Link href="/dashboard/employer/payroll">
+          <div className="card hover:border-accent-purple/40 transition-all group cursor-pointer">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-lg bg-accent-purple/10 flex items-center justify-center group-hover:bg-accent-purple/20 transition-colors">
+                <Send className="w-4 h-4 text-accent-purple" />
+              </div>
+              <div>
+                <p className="text-body font-medium text-text-primary">Run Payroll</p>
+                <p className="text-body-sm text-text-secondary">Distribute to all active employees</p>
+              </div>
+            </div>
+          </div>
+        </Link>
+
+        <Link href="/dashboard/employer/employees">
+          <div className="card hover:border-accent-purple/40 transition-all group cursor-pointer">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-lg bg-accent-purple/10 flex items-center justify-center group-hover:bg-accent-purple/20 transition-colors">
+                <Plus className="w-4 h-4 text-accent-purple" />
+              </div>
+              <div>
+                <p className="text-body font-medium text-text-primary">Add Employee</p>
+                <p className="text-body-sm text-text-secondary">Encrypt and register a new salary</p>
+              </div>
+            </div>
+          </div>
+        </Link>
+
+        <Link href="/dashboard/employer/treasury">
+          <div className="card hover:border-accent-purple/40 transition-all group cursor-pointer">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-lg bg-accent-purple/10 flex items-center justify-center group-hover:bg-accent-purple/20 transition-colors">
+                <Wallet className="w-4 h-4 text-accent-purple" />
+              </div>
+              <div>
+                <p className="text-body font-medium text-text-primary">Fund Treasury</p>
+                <p className="text-body-sm text-text-secondary">Deposit ETH before payroll</p>
+              </div>
+            </div>
+          </div>
+        </Link>
+      </div>
+
       {/* Employee Roster */}
-      <div className="space-y-6">
+      <div className="space-y-4">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-h2 font-bold text-text-primary">Employee Roster</h2>
-            <p className="text-text-secondary text-body mt-1">Manage and monitor active employees</p>
+            <h2 className="text-h3 font-semibold text-text-primary">Employee Roster</h2>
+            <p className="text-body-sm text-text-secondary mt-0.5">
+              {employeeCount !== undefined
+                ? `${employeeCount.toString()} employees registered on contract`
+                : "Loading…"}
+            </p>
           </div>
-          <Button variant="primary" size="md" className="gap-2">
-            <Plus className="w-4 h-4" />
-            Add Employee
-          </Button>
+          <Link href="/dashboard/employer/employees">
+            <Button variant="secondary" size="sm">Manage →</Button>
+          </Link>
         </div>
 
         <Card>
-          <DataTable
-            columns={[
-              {
-                key: "address",
-                header: "Wallet Address",
-                render: (value) => <span className="font-mono text-body-sm">{value as string}</span>,
-              },
-              {
-                key: "status",
-                header: "Status",
-                render: (value) => <StatusPill status={value as "active" | "inactive"} />,
-              },
-              {
-                key: "salary",
-                header: "Salary",
-                render: () => <EncryptedValueDisplay value="[ENCRYPTED]" />,
-              },
-              {
-                key: "balance",
-                header: "Balance",
-                render: () => <EncryptedValueDisplay value="[ENCRYPTED]" />,
-              },
-              {
-                key: "added",
-                header: "Added",
-                render: (value) => <span className="text-body-sm">{value as string}</span>,
-              },
-              {
-                key: "id",
-                header: "Actions",
-                render: () => (
-                  <button className="p-2 hover:bg-bg-tertiary rounded-lg transition-colors">
-                    <MoreVertical className="w-4 h-4 text-text-secondary" />
-                  </button>
-                ),
-              },
-            ]}
-            data={employees}
-            rowKey="id"
-          />
+          {employees.length === 0 ? (
+            <div className="flex flex-col items-center gap-3 py-12 text-center">
+              <Users className="w-8 h-8 text-text-tertiary" />
+              <p className="text-body text-text-secondary">No employees yet</p>
+              <Link href="/dashboard/employer/employees">
+                <Button variant="primary" size="sm" className="gap-2">
+                  <Plus className="w-4 h-4" /> Add your first employee
+                </Button>
+              </Link>
+            </div>
+          ) : (
+            <DataTable
+              columns={[
+                {
+                  key: "address",
+                  header: "Wallet Address",
+                  render: (value) => (
+                    <span className="font-mono text-body-sm text-text-primary">
+                      {(value as string).slice(0, 10)}…{(value as string).slice(-6)}
+                    </span>
+                  ),
+                },
+                {
+                  key: "address",
+                  header: "Status",
+                  render: (_, row) => <StatusCell address={(row as { address: ContractAddress }).address} />,
+                },
+                {
+                  key: "address",
+                  header: "Salary",
+                  render: () => <EncryptedValueDisplay value="[ENCRYPTED]" />,
+                },
+                {
+                  key: "address",
+                  header: "Added",
+                  render: (_, row) => <AddedAtCell address={(row as { address: ContractAddress }).address} />,
+                },
+              ]}
+              data={employees}
+            />
+          )}
         </Card>
       </div>
 
-      {/* Recent Activity */}
-      <div className="space-y-6">
-        <h2 className="text-h2 font-bold text-text-primary">Recent Activity</h2>
-        <Card>
-          <CardContent>
-            <div className="space-y-4">
-              {activities.map((activity, idx) => (
-                <TimelineItem
-                  key={idx}
-                  timestamp={activity.timestamp}
-                  title={activity.title}
-                  description={activity.description}
-                  icon={<TrendingUp className="w-4 h-4" />}
-                  isLast={idx === activities.length - 1}
-                />
-              ))}
+      <Card>
+        <CardHeader>
+          <h2 className="text-h3 font-semibold text-text-primary">Contract</h2>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-1">
+            <p className="text-body-sm text-text-secondary">Deployed address — share with employees</p>
+            <div className="flex items-center gap-3">
+              <code className="flex-1 font-mono text-body-sm text-text-primary bg-bg-tertiary px-3 py-2 rounded-lg break-all">
+                {contractAddress ?? "—"}
+              </code>
+              {contractAddress && (
+                <button
+                  onClick={handleCopyContract}
+                  className="p-2 hover:bg-bg-tertiary rounded-lg transition-colors shrink-0"
+                  title="Copy address"
+                >
+                  {copied
+                    ? <CheckCircle className="w-4 h-4 text-accent-green" />
+                    : <Copy className="w-4 h-4 text-text-secondary" />}
+                </button>
+              )}
+              {contractAddress && (
+                <a
+                  href={`https://sepolia.etherscan.io/address/${contractAddress}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="p-2 hover:bg-bg-tertiary rounded-lg transition-colors shrink-0"
+                  title="View on Etherscan"
+                >
+                  <ExternalLink className="w-4 h-4 text-text-secondary" />
+                </a>
+              )}
             </div>
-          </CardContent>
-        </Card>
-      </div>
+          </div>
+          <div className="space-y-1">
+            <p className="text-body-sm text-text-secondary">Employer wallet</p>
+            <p className="font-mono text-body-sm text-text-primary">{address ?? "—"}</p>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

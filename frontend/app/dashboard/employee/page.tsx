@@ -1,108 +1,249 @@
 "use client";
 
+import { useState } from "react";
+import Link from "next/link";
 import { Button } from "@/components/Button";
 import { Card, CardContent } from "@/components/Card";
 import { StatCard } from "@/components/StatCard";
 import { EncryptedValueDisplay } from "@/components/EncryptedValueDisplay";
-import { TimelineItem } from "@/components/TimelineItem";
-import { DollarSign, Eye, Calendar, Download, TrendingUp } from "lucide-react";
+import { useContract, useEmployeeStatus, ContractAddress } from "@/hooks/useContract";
+import { useFhevm } from "@/hooks/useFhevm";
+import { useWallet } from "@/hooks/useWallet";
+import {
+  DollarSign, Wallet, Download, Eye,
+  Loader2, AlertCircle, Lock
+} from "lucide-react";
+import formatEth from "@/lib/formatEth";
 
 export default function EmployeeOverview() {
-  const paymentHistory = [
-    {
-      timestamp: "2024-02-20 14:32 UTC",
-      title: "Salary Paid",
-      description: "Monthly salary deposited to your account",
-    },
-    {
-      timestamp: "2024-01-20 14:32 UTC",
-      title: "Salary Paid",
-      description: "Monthly salary deposited to your account",
-    },
-    {
-      timestamp: "2024-12-20 14:32 UTC",
-      title: "Salary Paid",
-      description: "Monthly salary deposited to your account",
-    },
-  ];
+  const {address} = useWallet()
+  const { 
+    contractAddress, 
+    encryptedBalanceHandle, 
+    encryptedSalaryHandle 
+  } = useContract()
+
+  const {isReady: fhevmReady, userDecrypt, initError} = useFhevm()
+
+  const {addedAt, isLoading: statusLoading} = useEmployeeStatus(address as ContractAddress | undefined)
+
+  const [salary, setSalary] = useState<string | null>(null);
+  const [decryptingSalary, setDecryptingSalary] = useState(false);
+  const [salaryError, setSalaryError] = useState<string | null>(null);
+
+  const [balance, setBalance] = useState<string | null>(null);
+  const [decryptingBalance, setDecryptingBalance] = useState(false);
+  const [balanceError, setBalanceError] = useState<string | null>(null);
+
+  async function handleDecryptSalary() {
+    if (!encryptedSalaryHandle || !contractAddress) return
+    setDecryptingSalary(true)
+    setSalaryError(null)
+
+    try {
+      const raw = await userDecrypt(encryptedSalaryHandle, contractAddress)
+
+      if (typeof raw === "bigint") setSalary(formatEth(raw))
+      else setSalaryError("Unexpected decryption format")        
+    } catch (error) {
+      setSalaryError(error instanceof Error ? error.message : "Decryption failed")
+    } finally {
+      setDecryptingSalary(false)
+    }
+  }
+
+  async function handleDecryptBalance() {
+    if (!encryptedBalanceHandle || !contractAddress) return
+    setDecryptingBalance(false)
+    setBalanceError(null)
+
+    try {
+      const raw = await userDecrypt(encryptedBalanceHandle, contractAddress)
+      if (typeof raw === "bigint") setBalance(formatEth(raw))
+      else setBalanceError("Unexpected decryption result")
+    } catch (error) {
+      setBalanceError(error instanceof Error ? error.message : "Decryption failed")
+    } finally {
+      setDecryptingBalance(false)
+    }
+  }
 
   return (
     <div className="space-y-8">
-      {/* Salary Overview */}
+      {initError && (
+        <div className="flex items-center gap-3 p-4 rounded-lg bg-accent-amber/10 border border-accent-amber/20">
+          <AlertCircle className="w-5 h-5 text-accent-amber shrink-0" />
+          <p className="text-body-sm text-accent-amber">FHE SDK error: {initError}</p>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <StatCard
           icon={<DollarSign className="w-6 h-6" />}
-          value="[ENCRYPTED]"
+          value={salary ?? "[ENCRYPTED]"}
           label="My Salary"
-          subtext="Click Decrypt to view"
+          subtext={salary ? "Decrypted" : "Decrypt to view"}
         />
         <StatCard
-          icon={<Eye className="w-6 h-6" />}
-          value="[ENCRYPTED]"
+          icon={<Wallet className="w-6 h-6" />}
+          value={balance ?? "[ENCRYPTED]"}
           label="Available Balance"
-          subtext="Accumulated from payroll"
+          subtext={balance ? "Ready to withdraw" : "Decrypt to view"}
         />
       </div>
 
-      {/* Salary Card with Decrypt */}
       <Card>
-        <CardContent className="space-y-6">
-          <div>
-            <h2 className="text-h3 font-semibold text-text-primary mb-4">My Salary Details</h2>
-            <EncryptedValueDisplay value="[ENCRYPTED]" decrypted="$8,500.00" label="Monthly Salary" />
+        <CardContent className="space-y-5">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h2 className="text-h3 font-semibold text-text-primary">My Salary</h2>
+              <p className="text-body-sm text-text-secondary flex items-center gap-1.5 mt-1">
+                <Lock className="w-3.5 h-3.5" />
+                Encrypted with FHE — only your wallet can see this
+              </p>
+            </div>
+            <Link href="/dashboard/employee/salary">
+              <Button variant="secondary" size="sm">Details →</Button>
+            </Link>
           </div>
 
-          <div className="pt-6 border-t border-border-light space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <p className="text-body-sm text-text-secondary">Effective Date</p>
-                <p className="text-body font-medium text-text-primary">2024-01-15</p>
-              </div>
-              <div>
-                <p className="text-body-sm text-text-secondary">Frequency</p>
-                <p className="text-body font-medium text-text-primary">Monthly</p>
-              </div>
+          <EncryptedValueDisplay
+            value="[ENCRYPTED]"
+            decrypted={salary ?? undefined}
+            label="Monthly salary (ETH)"
+          />
+
+          {salaryError && (
+            <p className="text-body-sm text-accent-red flex items-center gap-1.5">
+              <AlertCircle className="w-4 h-4" /> {salaryError}
+            </p>
+          )}
+
+          {!salary && (
+            <Button
+              variant="secondary"
+              size="sm"
+              className="gap-2"
+              onClick={handleDecryptSalary}
+              disabled={decryptingSalary || !fhevmReady || !encryptedSalaryHandle}
+            >
+              {decryptingSalary ? (
+                <><Loader2 className="w-4 h-4 animate-spin" /> Decrypting…</>
+              ) : !fhevmReady ? (
+                <><Loader2 className="w-4 h-4 animate-spin" /> Initializing FHE…</>
+              ) : (
+                <><Eye className="w-4 h-4" /> Decrypt Salary</>
+              )}
+            </Button>
+          )}
+
+          {salary && (
+            <button
+              onClick={() => setSalary(null)}
+              className="text-body-sm text-text-tertiary hover:text-text-secondary transition-colors"
+            >
+              Hide
+            </button>
+          )}
+
+          {/* Meta row */}
+          <div className="pt-4 border-t border-border-light grid grid-cols-2 gap-4">
+            <div>
+              <p className="text-body-sm text-text-secondary">Pay frequency</p>
+              <p className="text-body font-medium text-text-primary">Monthly</p>
+            </div>
+            <div>
+              <p className="text-body-sm text-text-secondary">Employee since</p>
+              <p className="text-body font-medium text-text-primary">
+                {statusLoading ? "…" : addedAt ? addedAt.toLocaleDateString() : "—"}
+              </p>
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Balance & Withdraw */}
       <Card>
-        <CardContent className="space-y-6">
-          <div>
-            <h2 className="text-h3 font-semibold text-text-primary mb-4">Available Balance</h2>
-            <div className="space-y-4">
-              <EncryptedValueDisplay value="[ENCRYPTED]" decrypted="3.5 ETH ($12,250)" label="Total Accumulated" />
-              <Button variant="primary" fullWidth size="lg" className="gap-2 mt-4">
-                <Download className="w-4 h-4" />
-                Withdraw Funds
+        <CardContent className="space-y-5">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h2 className="text-h3 font-semibold text-text-primary">Available Balance</h2>
+              <p className="text-body-sm text-text-secondary mt-1">
+                Accumulated from payroll runs — withdraw any time
+              </p>
+            </div>
+            <Link href="/dashboard/employee/balance">
+              <Button variant="secondary" size="sm">Withdraw →</Button>
+            </Link>
+          </div>
+
+          <EncryptedValueDisplay
+            value="[ENCRYPTED]"
+            decrypted={balance ?? undefined}
+            label="Balance (ETH)"
+          />
+
+          {balanceError && (
+            <p className="text-body-sm text-accent-red flex items-center gap-1.5">
+              <AlertCircle className="w-4 h-4" /> {balanceError}
+            </p>
+          )}
+
+          <div className="flex items-center gap-3">
+            {!balance && (
+              <Button
+                variant="secondary"
+                size="sm"
+                className="gap-2"
+                onClick={handleDecryptBalance}
+                disabled={decryptingBalance || !fhevmReady || !encryptedBalanceHandle}
+              >
+                {decryptingBalance ? (
+                  <><Loader2 className="w-4 h-4 animate-spin" /> Decrypting…</>
+                ) : (
+                  <><Eye className="w-4 h-4" /> Decrypt Balance</>
+                )}
               </Button>
-            </div>
+            )}
+            {balance && (
+              <>
+                <button
+                  onClick={() => setBalance(null)}
+                  className="text-body-sm text-text-tertiary hover:text-text-secondary transition-colors"
+                >
+                  Hide
+                </button>
+                <Link href="/dashboard/employee/balance">
+                  <Button variant="primary" size="sm" className="gap-2">
+                    <Download className="w-4 h-4" /> Withdraw
+                  </Button>
+                </Link>
+              </>
+            )}
           </div>
         </CardContent>
       </Card>
 
-      {/* Payment History */}
-      <div className="space-y-6">
-        <h2 className="text-h2 font-bold text-text-primary">Payment History</h2>
-        <Card>
-          <CardContent>
-            <div className="space-y-4">
-              {paymentHistory.map((payment, idx) => (
-                <TimelineItem
-                  key={idx}
-                  timestamp={payment.timestamp}
-                  title={payment.title}
-                  description={payment.description}
-                  icon={<TrendingUp className="w-4 h-4" />}
-                  isLast={idx === paymentHistory.length - 1}
-                />
-              ))}
+      <Card>
+        <CardContent className="space-y-3">
+          <h2 className="text-h3 font-semibold text-text-primary">Contract</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-1">
+              <p className="text-body-sm text-text-secondary">Blindroll contract</p>
+              <p className="font-mono text-body-sm text-text-primary break-all">
+                {contractAddress
+                  ? `${contractAddress.slice(0, 10)}…${contractAddress.slice(-6)}`
+                  : "—"}
+              </p>
             </div>
-          </CardContent>
-        </Card>
-      </div>
+            <div className="space-y-1">
+              <p className="text-body-sm text-text-secondary">Your wallet</p>
+              <p className="font-mono text-body-sm text-text-primary break-all">
+                {address ?? "—"}
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
