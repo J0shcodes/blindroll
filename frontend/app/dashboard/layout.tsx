@@ -12,30 +12,27 @@ export default function DashboardLayout({ children }: Readonly<{ children: React
   const pathname = usePathname();
   const router = useRouter()
 
-  const {isConnected, isCorrectNetwork, address, shortAddress} = useWallet()
+  const {isConnected, isCorrectNetwork} = useWallet()
   const {isEmployer, isEmployee, isRoleLoading} = useContract()
-  // const isEmployer = pathname.includes("employer");
   const [sidebarOpen, setSidebarOpen] = useState(false);
-
-  const userType = isEmployer ? "employer" : "employee";
 
   const redirectTarget = (() => {
     if (isRoleLoading) return null
 
     if (!isConnected) {
-      router.replace("/connect")
-      return
+      // router.replace("/connect")
+      return "/connect"
     }
 
-    const isEmployerPath = pathname.includes("/employer")
-    const isEmployeePath = pathname.includes("/employee")
+    const segments = pathname.split("/").filter(Boolean)
+    const dashboardRole = segments[1]
 
-    if (isEmployerPath && !isEmployer) {
+    if (dashboardRole === "employer" && !isEmployer) {
       if (isEmployee) return "/dashboard/employee"
     }
 
-    if (isEmployeePath && !isEmployee) {
-      if (isEmployer) return "/dashbord/employer"
+    if (dashboardRole === "employee" && !isEmployee) {
+      if (isEmployer) return "/dashboard/employer"
     }
 
     return null
@@ -73,7 +70,7 @@ export default function DashboardLayout({ children }: Readonly<{ children: React
     <div className="flex h-screen bg-bg-primary">
       {/* Sidebar - Desktop */}
       <div className="hidden lg:block w-60 fixed left-0 top-0 h-screen">
-        <Sidebar userType={userType} walletAddress="0x1234...5678" />
+        <Sidebar />
       </div>
 
       {/* Sidebar - Mobile */}
@@ -83,7 +80,7 @@ export default function DashboardLayout({ children }: Readonly<{ children: React
       <div
         className={`lg:hidden fixed left-0 top-0 h-screen w-60 z-50 transform transition-transform ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}`}
       >
-        <Sidebar userType={userType} walletAddress="0x1234...5678" />
+        <Sidebar />
       </div>
 
       {/* Main Content */}

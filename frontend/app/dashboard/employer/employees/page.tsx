@@ -31,14 +31,19 @@ export default function EmployeesPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-h2 font-bold text-text-primary">Manage Employees</h1>
-          <p className="text-text-secondary text-body mt-2">
+        <div className="">
+          <h1 className="lg:text-h2 sm:text-lg font-bold text-text-primary">Manage Employees</h1>
+          <p className="text-text-secondary md:text-body text-sm mt-2">
           {employeeCount !== undefined ? `${employeeCount.toString()} employees on payroll` : "Loading..."}
           </p>
         </div>
-        <Button variant="primary" size="md" className="gap-2 shrink-0" onClick={() => setShowAddModal(true)}>
+        <Button variant="primary" size="md" className="gap-2 shrink-0 md:flex hidden" onClick={() => setShowAddModal(true)}>
           <Plus className="w-4 h-4" />
+          Add Employee
+        </Button>
+        {/* Mobile Button */}
+        <Button variant="primary" size="sm" className="gap-2 shrink-0 md:hidden flex md:text-base text-sm" onClick={() => setShowAddModal(true)}>
+          <Plus className="w-2 h-2 md:block" />
           Add Employee
         </Button>
       </div>
@@ -56,7 +61,7 @@ export default function EmployeesPage() {
             </Button>
           </div>
         ) : (
-<DataTable
+          <DataTable
             columns={[
               {
                 key: "address",

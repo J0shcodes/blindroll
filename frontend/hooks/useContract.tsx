@@ -3,6 +3,7 @@
 import { useReadContract, useWriteContract, useWaitForTransactionReceipt } from "wagmi"
 import { useWallet } from "./useWallet"
 import { BLINDROLL_ABI } from "@/abi/abi"
+import { getContractAddress } from "@/lib/contractConfig"
 
 export type ContractAddress = `0x${string}`
 export type EncryptedHandle = `0x${string}`
@@ -37,7 +38,7 @@ export interface UseContractReturn {
 export function useContract(): UseContractReturn {
     const {address: walletAddress} = useWallet()
 
-    const contractAddress = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS as ContractAddress | undefined
+    const contractAddress = getContractAddress()
 
     const isConfigured = !!contractAddress
 
@@ -83,14 +84,16 @@ export function useContract(): UseContractReturn {
         address: contractAddress,
         abi: BLINDROLL_ABI,
         functionName: "getMyEncryptedSalary",
-        query: {enabled: isConfigured && isEmployee}
+        account: walletAddress,
+        query: {enabled: isConfigured && !!walletAddress && !isEmployeeLoading && isEmployee}
     })
 
     const {data: encryptedBalanceHandle} = useReadContract({
         address: contractAddress,
         abi: BLINDROLL_ABI,
         functionName: "getMyEncryptedBalance",
-        query: { enabled: isConfigured && isEmployee }
+        account: walletAddress,
+        query: {enabled: isConfigured && !!walletAddress && !isEmployeeLoading}
     })
 
     const {data: encryptedTreasuryHandle} = useReadContract({
@@ -140,7 +143,7 @@ export interface UseEmployeeStatusReturn {
 }
 
 export function useEmployeeStatus(employeeAddress: ContractAddress | undefined): UseEmployeeStatusReturn {
-    const contractAddress = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS as ContractAddress | undefined
+    const contractAddress = getContractAddress()
 
     const enabled = !!contractAddress && !!employeeAddress
 

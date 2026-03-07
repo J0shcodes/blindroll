@@ -69,7 +69,7 @@ export default function ConnectPage() {
   ]); 
 
     function handleRoleSelect(role: Role) {
-        setSelectedRole(role)
+      setSelectedRole(role)
     }
 
     function handleConnectWallet() {
@@ -148,7 +148,7 @@ export default function ConnectPage() {
                   <h2 className="text-h2 font-bold text-text-primary">Connect your wallet</h2>
                   <p className="text-body text-text-secondary">
                     {selectedRole === "employer"
-                      ? "Connect the wallet you used to deploy Blindroll — it will be recognized as the employer."
+                      ? "Connect the wallet you will use to deploy Blindroll, it will be recognized as the employer."
                       : "Connect the wallet your employer registered on the contract."}
                   </p>
                 </div>

@@ -103,7 +103,7 @@ export function useFhevm(): UseFhevmReturn {
   //   gatewayChainId: 10901
   //   relayerUrl:     https://relayer.testnet.zama.org
   useEffect(() => {
-    const cancelled = false
+    let cancelled = false
 
     const init = async () => {
 
@@ -120,8 +120,13 @@ export function useFhevm(): UseFhevmReturn {
 
       try {
         const sdk = await import("@zama-fhe/relayer-sdk/bundle")
+        const sdkModule = (sdk as any).defualt || sdk
         
-        const {initSDK, createInstance, SepoliaConfig} = sdk
+        const {initSDK, createInstance, SepoliaConfig} = sdkModule
+
+        if(!initSDK) {
+          throw new Error("initSDK is undefined. check import path.")
+        }
         
         // Load WASM — must complete before createInstance is called
         await initSDK();
@@ -157,11 +162,10 @@ export function useFhevm(): UseFhevmReturn {
       }
     };
 
-    init();
+    init()
 
     return () => {
-      // Reset the guard on wallet disconnect/network change so
-      // re-initialization can happen when the user reconnects
+      cancelled = true
       initAttempted.current = false;
     };
   }, [isConnected, isCorrectNetwork]);

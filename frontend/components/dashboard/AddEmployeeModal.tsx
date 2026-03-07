@@ -29,8 +29,8 @@ export default function AddEmployeeModal({onClose}: AddEmployeeModalProps) {
     const canSubmit = isValidAddress && salaryWei > 0n && fhevmReady
 
     async function handleSubmit() {
-        if (!contractAddress || !walletAddress) return
-        setErrorMsg("")
+      if (!contractAddress || !walletAddress) return
+      setErrorMsg("")
 
         try {
             setStep("encrypting")
@@ -38,10 +38,10 @@ export default function AddEmployeeModal({onClose}: AddEmployeeModalProps) {
 
             setStep("signing")
             await mutateAsync({
-                address: contractAddress,
-                abi: BLINDROLL_ABI,
-                functionName: "addEmployee",
-                args: [employeeAddress.trim() as ContractAddress, handle, proof]
+              address: contractAddress,
+              abi: BLINDROLL_ABI,
+              functionName: "addEmployee",
+              args: [employeeAddress.trim() as ContractAddress, handle, proof]
             })
 
             setStep("confirming")
@@ -49,7 +49,7 @@ export default function AddEmployeeModal({onClose}: AddEmployeeModalProps) {
             setErrorMsg(error instanceof Error ? error.message : "Transaction failed")
             setStep("error")
         }
-    }
+   }
 
     if (step === 'confirming' && isConfirmed) {
       return (

@@ -48,6 +48,7 @@ export default function EmployeeOverview() {
       }
     } catch (error) {
       setTreasuryError("Decryption failed")
+      console.error(error)
     } finally {
       setDecryptingTreasury(false)
     }
@@ -65,7 +66,7 @@ export default function EmployeeOverview() {
   return (
     <div className="space-y-8">
       {/* Stats Row */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <StatCard
           icon={<Users className="w-6 h-6" />}
           value={employeeCount !== undefined ? employeeCount.toString() : "..."}

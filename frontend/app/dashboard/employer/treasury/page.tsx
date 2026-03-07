@@ -1,6 +1,6 @@
-"use client"
+"use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { parseEther } from "viem";
 import { Button } from "@/components/Button";
 import { Card, CardContent, CardHeader } from "@/components/Card";
@@ -11,13 +11,10 @@ import { useContract } from "@/hooks/useContract";
 import { useFhevm } from "@/hooks/useFhevm";
 import { useWallet } from "@/hooks/useWallet";
 import { BLINDROLL_ABI } from "@/abi/abi";
-import {
-  CheckCircle, AlertCircle, ExternalLink, Loader2, Wallet, Copy
-} from "lucide-react";
-
+import { CheckCircle, AlertCircle, ExternalLink, Loader2, Wallet, Copy, Lock } from "lucide-react";
 
 export default function TreasuryPage() {
-  const { address } = useWallet()
+  const { address } = useWallet();
   const {
     contractAddress,
     encryptedTreasuryHandle,
@@ -26,13 +23,13 @@ export default function TreasuryPage() {
     isConfirmed,
     isConfirming,
     txHash,
-    writeError
-  } = useContract()
+    writeError,
+  } = useContract();
 
-  const {isReady: fhevmReady, userDecrypt} = useFhevm()
+  const { isReady: fhevmReady, userDecrypt, encryptUint64 } = useFhevm();
 
   const [depositAmount, setDepositAmount] = useState("");
-  const [step, setStep] = useState<"idle" | "signing" | "confirming">("idle");
+  const [step, setStep] = useState<"idle" | "encrypting" | "signing" | "confirming">("idle");
   // const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
@@ -40,30 +37,32 @@ export default function TreasuryPage() {
   const [treasuryBalance, setTreasuryBalance] = useState<string | null>(null);
   const [decrypting, setDecrypting] = useState(false);
 
-  const isError = !!writeError
-  const isDone = isConfirmed
+  const isError = !!writeError;
+  const isDone = isConfirmed;
 
-  const isValidAmount = 
-    depositAmount.trim().length > 0 && !isNaN(parseFloat(depositAmount)) && 
-    parseFloat(depositAmount) > 0
+  const isValidAmount =
+    depositAmount.trim().length > 0 && !isNaN(parseFloat(depositAmount)) && parseFloat(depositAmount) > 0;
 
   async function handleDeposit() {
-    if (!contractAddress || !isValidAmount) return
-
-    setStep("signing")
+    if (!contractAddress || !isValidAmount || !address) return;
 
     try {
+      setStep("encrypting");
+      const amountWei = BigInt(Math.round(parseFloat(depositAmount) * 1e18));
+      const { handle, proof } = await encryptUint64(amountWei, contractAddress, address);
+
+      setStep("signing");
       await mutateAsync({
         address: contractAddress,
         abi: BLINDROLL_ABI,
         functionName: "depositToTreasury",
-        value: parseEther(depositAmount)
-      })
+        args: [handle, proof],
+        value: parseEther(depositAmount),
+      });
 
-      setStep("confirming")
-
+      setStep("confirming");
     } catch (err) {
-      console.log(err)
+      console.log(err instanceof Error ? err.message : "Transaction Failed");
     }
   }
 
@@ -94,14 +93,20 @@ export default function TreasuryPage() {
   }
 
   const recentDeposits = [
-    { timestamp: "Awaiting on-chain data", title: "No recent deposits", description: "Fund the treasury to enable payroll" },
+    {
+      timestamp: "Awaiting on-chain data",
+      title: "No recent deposits",
+      description: "Fund the treasury to enable payroll",
+    },
   ];
 
   return (
     <div className="space-y-8 max-w-2xl">
       <div>
         <h1 className="text-h2 font-bold text-text-primary">Treasury Management</h1>
-        <p className="text-text-secondary text-body mt-2">Manage ETH in the payroll treasury. Payroll draws from this balance.</p>
+        <p className="text-text-secondary text-body mt-2">
+          Manage ETH in the payroll treasury. Payroll draws from this balance.
+        </p>
       </div>
 
       <Card>
@@ -112,16 +117,12 @@ export default function TreasuryPage() {
             </div>
             <div>
               <p className="text-body-sm text-text-secondary">Treasury Balance</p>
-              <p className="text-body-sm text-text-tertiary">Encrypted on-chain — only visible to you</p>
+              <p className="text-body-sm text-text-tertiary">Encrypted on-chain, only visible to you</p>
             </div>
           </div>
         </CardHeader>
         <CardContent>
-          <EncryptedValueDisplay
-            value="[ENCRYPTED]"
-            decrypted={treasuryBalance ?? undefined}
-            label="Current balance"
-          />
+          <EncryptedValueDisplay value="[ENCRYPTED]" decrypted={treasuryBalance ?? undefined} label="Current balance" />
           {encryptedTreasuryHandle && fhevmReady && !treasuryBalance && (
             <Button
               variant="secondary"
@@ -130,9 +131,13 @@ export default function TreasuryPage() {
               onClick={handleDecryptTreasury}
               disabled={decrypting}
             >
-              {decrypting
-                ? <><Loader2 className="w-4 h-4 animate-spin" /> Decrypting…</>
-                : "Decrypt Balance"}
+              {decrypting ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" /> Decrypting…
+                </>
+              ) : (
+                "Decrypt Balance"
+              )}
             </Button>
           )}
         </CardContent>
@@ -143,7 +148,6 @@ export default function TreasuryPage() {
           <h2 className="text-h3 font-semibold text-text-primary">Deposit ETH</h2>
         </CardHeader>
         <CardContent className="space-y-5">
-
           {/* Error */}
           {isError && (
             <div className="flex items-start gap-3 p-4 rounded-lg bg-accent-red/10 border border-accent-red/20">
@@ -158,7 +162,7 @@ export default function TreasuryPage() {
               <div className="flex items-center gap-3 p-4 rounded-lg bg-accent-green/10 border border-accent-green/20">
                 <CheckCircle className="w-5 h-5 text-accent-green" />
                 <p className="text-body-sm text-accent-green font-medium">
-                  Deposit confirmed — treasury funded with {depositAmount} ETH
+                  Deposit confirmed, treasury funded with {depositAmount} ETH
                 </p>
               </div>
               {txHash && (
@@ -188,7 +192,10 @@ export default function TreasuryPage() {
                 <Button
                   variant="tertiary"
                   fullWidth
-                  onClick={() => { setStep("idle"); setDepositAmount(""); }}
+                  onClick={() => {
+                    setStep("idle");
+                    setDepositAmount("");
+                  }}
                 >
                   Deposit More
                 </Button>
@@ -196,25 +203,31 @@ export default function TreasuryPage() {
             </div>
           )}
 
-          {/* Sending state */}
-          {isPending || isConfirming && (
+          {(step === "encrypting" || step === "signing" || step === "confirming") && (
             <div className="flex flex-col items-center gap-4 py-8 text-center">
               <Loader2 className="w-8 h-8 text-accent-purple animate-spin" />
               <div className="space-y-1">
                 <p className="text-body font-medium text-text-primary">
-                  {step === "signing" ? "Waiting for wallet signature…" : "Confirming on Sepolia…"}
+                  {step === "encrypting"
+                    ? "Encrypting deposit amount…"
+                    : step === "signing"
+                      ? "Waiting for wallet signature…"
+                      : "Confirming on Sepolia…"}
                 </p>
-                <p className="text-body-sm text-text-secondary">
-                  {step === "signing"
-                    ? "Confirm the deposit in your wallet"
-                    : `Depositing ${depositAmount} ETH — awaiting block confirmation`}
+                <p className="text-body-sm text-text-secondary flex items-center justify-center gap-1.5">
+                  {step === "encrypting" && <Lock className="w-3.5 h-3.5" />}
+                  {step === "encrypting"
+                    ? "Amount is encrypted before leaving your browser"
+                    : step === "signing"
+                      ? "Confirm the deposit in your wallet"
+                      : `Depositing ${depositAmount} ETH — awaiting block confirmation`}
                 </p>
               </div>
             </div>
           )}
 
           {/* Idle form */}
-          {!isPending && !isConfirming && !isConfirmed && (
+          {(step === "idle" || isError) && (
             <>
               <div className="space-y-2">
                 <label className="text-body-sm text-text-secondary">Amount (ETH)</label>
@@ -240,13 +253,8 @@ export default function TreasuryPage() {
                 ))}
               </div>
 
-              <Button
-                variant="primary"
-                fullWidth
-                disabled={!isValidAmount || isPending}
-                onClick={handleDeposit}
-              >
-                Deposit {depositAmount ? `${depositAmount} ETH` : "ETH"}
+              <Button variant="primary" fullWidth disabled={!isValidAmount || isPending} onClick={handleDeposit}>
+                {!fhevmReady ? "Initializing FHE..." : `Deposit ${depositAmount ? depositAmount + " ETH" : "eth"}`}
               </Button>
             </>
           )}

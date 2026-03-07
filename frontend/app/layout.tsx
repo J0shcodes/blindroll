@@ -3,6 +3,7 @@ import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { headers } from "next/headers";
 import ContextProvider from "@/context";
+import Script from "next/script";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -29,6 +30,7 @@ export default async function RootLayout({
   const cookies = headerObj.get("cookie")
   return (
     <html lang="en">
+      <Script src="https://cdn.zama.org/relayer-sdk-js/0.3.0-8/relayer-sdk-js.umd.cjs"></Script>
       <body
         className={`${inter.variable} ${jetbrainsmono.variable} antialiased`}
       >

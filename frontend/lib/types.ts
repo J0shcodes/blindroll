@@ -5,7 +5,7 @@ import { EmployeeRowData } from "@/app/dashboard/employer/employees/page";
 export interface Employee {
   id: string;
   walletAddress: string;
-  status: 'active' | 'inactive';
+  status: "active" | "inactive";
   salary: string; // encrypted
   balance: string; // encrypted
   addedDate: string;
@@ -22,7 +22,7 @@ export interface PayrollStats {
 export interface Activity {
   id: string;
   timestamp: string;
-  type: 'payroll' | 'treasury' | 'employee' | 'salary' | 'settings';
+  type: "payroll" | "treasury" | "employee" | "salary" | "settings";
   description: string;
   metadata?: Record<string, string>;
 }
@@ -30,19 +30,19 @@ export interface Activity {
 export interface WalletConnection {
   address: string;
   isConnected: boolean;
-  network: 'sepolia' | 'mainnet';
+  network: "sepolia" | "mainnet";
 }
 
 export interface EncryptionState {
-  state: 'plaintext' | 'encrypting' | 'encrypted';
+  state: "plaintext" | "encrypting" | "encrypted";
   plainvalue?: string;
   encryptedValue?: string;
   progress?: number;
 }
 
 export interface ButtonProps {
-  variant?: 'primary' | 'secondary' | 'tertiary';
-  size?: 'sm' | 'md' | 'lg';
+  variant?: "primary" | "secondary" | "tertiary";
+  size?: "sm" | "md" | "lg";
   disabled?: boolean;
   loading?: boolean;
   onClick?: () => void;
@@ -59,7 +59,7 @@ export interface CardProps {
 }
 
 export interface BadgeProps {
-  variant?: 'success' | 'warning' | 'error' | 'default';
+  variant?: "success" | "warning" | "error" | "default";
   children: React.ReactNode;
   className?: string;
 }
@@ -72,8 +72,7 @@ export interface StatCardProps {
   className?: string;
 }
 
-export interface InputProps
-  extends React.InputHTMLAttributes<HTMLInputElement> {
+export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label?: string;
   error?: string;
   helpText?: string;
@@ -89,7 +88,7 @@ export interface TableColumn<T> {
 
 export interface TableProps<T> {
   columns: TableColumn<T>[];
-  data: EmployeeRowData[] | {address: `0x${string}`}[];
+  data: EmployeeRowData[] | { address: `0x${string}` }[];
   rowKey?: keyof T;
   onRowClick?: (row: T) => void;
   className?: string;
@@ -113,6 +112,6 @@ export interface NavigationItem {
 
 export interface DashboardLayoutProps {
   children: React.ReactNode;
-  userType: 'employer' | 'employee';
+  userType: "employer" | "employee";
   walletAddress: string;
 }

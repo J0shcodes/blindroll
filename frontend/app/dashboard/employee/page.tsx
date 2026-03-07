@@ -9,23 +9,16 @@ import { EncryptedValueDisplay } from "@/components/EncryptedValueDisplay";
 import { useContract, useEmployeeStatus, ContractAddress } from "@/hooks/useContract";
 import { useFhevm } from "@/hooks/useFhevm";
 import { useWallet } from "@/hooks/useWallet";
-import {
-  DollarSign, Wallet, Download, Eye,
-  Loader2, AlertCircle, Lock
-} from "lucide-react";
+import { DollarSign, Wallet, Download, Eye, Loader2, AlertCircle, Lock } from "lucide-react";
 import formatEth from "@/lib/formatEth";
 
 export default function EmployeeOverview() {
-  const {address} = useWallet()
-  const { 
-    contractAddress, 
-    encryptedBalanceHandle, 
-    encryptedSalaryHandle 
-  } = useContract()
+  const { address } = useWallet();
+  const { contractAddress, encryptedBalanceHandle, encryptedSalaryHandle } = useContract();
 
-  const {isReady: fhevmReady, userDecrypt, initError} = useFhevm()
+  const { isReady: fhevmReady, userDecrypt, initError } = useFhevm();
 
-  const {addedAt, isLoading: statusLoading} = useEmployeeStatus(address as ContractAddress | undefined)
+  const { addedAt, isLoading: statusLoading } = useEmployeeStatus(address as ContractAddress | undefined);
 
   const [salary, setSalary] = useState<string | null>(null);
   const [decryptingSalary, setDecryptingSalary] = useState(false);
@@ -35,36 +28,42 @@ export default function EmployeeOverview() {
   const [decryptingBalance, setDecryptingBalance] = useState(false);
   const [balanceError, setBalanceError] = useState<string | null>(null);
 
+  console.log({
+    fhevmReady,
+    encryptedSalaryHandle,
+    encryptedBalanceHandle,
+  });
+
   async function handleDecryptSalary() {
-    if (!encryptedSalaryHandle || !contractAddress) return
-    setDecryptingSalary(true)
-    setSalaryError(null)
+    if (!encryptedSalaryHandle || !contractAddress) return;
+    setDecryptingSalary(true);
+    setSalaryError(null);
 
     try {
-      const raw = await userDecrypt(encryptedSalaryHandle, contractAddress)
+      const raw = await userDecrypt(encryptedSalaryHandle, contractAddress);
 
-      if (typeof raw === "bigint") setSalary(formatEth(raw))
-      else setSalaryError("Unexpected decryption format")        
+      if (typeof raw === "bigint") setSalary(formatEth(raw));
+      else setSalaryError("Unexpected decryption format");
     } catch (error) {
-      setSalaryError(error instanceof Error ? error.message : "Decryption failed")
+      setSalaryError(error instanceof Error ? error.message : "Decryption failed");
     } finally {
-      setDecryptingSalary(false)
+      setDecryptingSalary(false);
     }
   }
 
   async function handleDecryptBalance() {
-    if (!encryptedBalanceHandle || !contractAddress) return
-    setDecryptingBalance(false)
-    setBalanceError(null)
+    if (!encryptedBalanceHandle || !contractAddress) return;
+    setDecryptingBalance(true);
+    setBalanceError(null);
 
     try {
-      const raw = await userDecrypt(encryptedBalanceHandle, contractAddress)
-      if (typeof raw === "bigint") setBalance(formatEth(raw))
-      else setBalanceError("Unexpected decryption result")
+      const raw = await userDecrypt(encryptedBalanceHandle, contractAddress);
+      if (typeof raw === "bigint") setBalance(formatEth(raw));
+      else setBalanceError("Unexpected decryption result");
     } catch (error) {
-      setBalanceError(error instanceof Error ? error.message : "Decryption failed")
+      setBalanceError(error instanceof Error ? error.message : "Decryption failed");
     } finally {
-      setDecryptingBalance(false)
+      setDecryptingBalance(false);
     }
   }
 
@@ -99,19 +98,17 @@ export default function EmployeeOverview() {
               <h2 className="text-h3 font-semibold text-text-primary">My Salary</h2>
               <p className="text-body-sm text-text-secondary flex items-center gap-1.5 mt-1">
                 <Lock className="w-3.5 h-3.5" />
-                Encrypted with FHE — only your wallet can see this
+                Encrypted with FHE, only your wallet can see this
               </p>
             </div>
             <Link href="/dashboard/employee/salary">
-              <Button variant="secondary" size="sm">Details →</Button>
+              <Button variant="secondary" size="sm">
+                Details →
+              </Button>
             </Link>
           </div>
 
-          <EncryptedValueDisplay
-            value="[ENCRYPTED]"
-            decrypted={salary ?? undefined}
-            label="Monthly salary (ETH)"
-          />
+          <EncryptedValueDisplay value="[ENCRYPTED]" decrypted={salary ?? undefined} label="Monthly salary (ETH)" />
 
           {salaryError && (
             <p className="text-body-sm text-accent-red flex items-center gap-1.5">
@@ -128,11 +125,19 @@ export default function EmployeeOverview() {
               disabled={decryptingSalary || !fhevmReady || !encryptedSalaryHandle}
             >
               {decryptingSalary ? (
-                <><Loader2 className="w-4 h-4 animate-spin" /> Decrypting…</>
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" /> Decrypting…
+                </>
               ) : !fhevmReady ? (
-                <><Loader2 className="w-4 h-4 animate-spin" /> Initializing FHE…</>
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" /> Initializing FHE…
+                </>
+              ) : !encryptedSalaryHandle ? (
+                "Salary not available yet"
               ) : (
-                <><Eye className="w-4 h-4" /> Decrypt Salary</>
+                <>
+                  <Eye className="w-4 h-4" /> Decrypt Salary
+                </>
               )}
             </Button>
           )}
@@ -167,20 +172,16 @@ export default function EmployeeOverview() {
           <div className="flex items-start justify-between gap-4">
             <div>
               <h2 className="text-h3 font-semibold text-text-primary">Available Balance</h2>
-              <p className="text-body-sm text-text-secondary mt-1">
-                Accumulated from payroll runs — withdraw any time
-              </p>
+              <p className="text-body-sm text-text-secondary mt-1">Accumulated from payroll runs, withdraw any time</p>
             </div>
             <Link href="/dashboard/employee/balance">
-              <Button variant="secondary" size="sm">Withdraw →</Button>
+              <Button variant="secondary" size="sm">
+                Withdraw →
+              </Button>
             </Link>
           </div>
 
-          <EncryptedValueDisplay
-            value="[ENCRYPTED]"
-            decrypted={balance ?? undefined}
-            label="Balance (ETH)"
-          />
+          <EncryptedValueDisplay value="[ENCRYPTED]" decrypted={balance ?? undefined} label="Balance (ETH)" />
 
           {balanceError && (
             <p className="text-body-sm text-accent-red flex items-center gap-1.5">
@@ -198,9 +199,15 @@ export default function EmployeeOverview() {
                 disabled={decryptingBalance || !fhevmReady || !encryptedBalanceHandle}
               >
                 {decryptingBalance ? (
-                  <><Loader2 className="w-4 h-4 animate-spin" /> Decrypting…</>
-                ) : (
-                  <><Eye className="w-4 h-4" /> Decrypt Balance</>
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" /> Decrypting…
+                  </>
+                ) : !encryptedBalanceHandle ? (
+                "Balance not available yet"
+              ) : (
+                  <>
+                    <Eye className="w-4 h-4" /> Decrypt Balance
+                  </>
                 )}
               </Button>
             )}
@@ -230,16 +237,12 @@ export default function EmployeeOverview() {
             <div className="space-y-1">
               <p className="text-body-sm text-text-secondary">Blindroll contract</p>
               <p className="font-mono text-body-sm text-text-primary break-all">
-                {contractAddress
-                  ? `${contractAddress.slice(0, 10)}…${contractAddress.slice(-6)}`
-                  : "—"}
+                {contractAddress ? `${contractAddress.slice(0, 10)}…${contractAddress.slice(-6)}` : "—"}
               </p>
             </div>
             <div className="space-y-1">
               <p className="text-body-sm text-text-secondary">Your wallet</p>
-              <p className="font-mono text-body-sm text-text-primary break-all">
-                {address ?? "—"}
-              </p>
+              <p className="font-mono text-body-sm text-text-primary break-all">{address ?? "—"}</p>
             </div>
           </div>
         </CardContent>

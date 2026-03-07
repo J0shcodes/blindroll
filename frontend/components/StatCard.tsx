@@ -7,7 +7,7 @@ export function StatCard({ icon, value, label, subtext, className }: StatCardPro
       <div className="flex items-start justify-between">
         <div className="space-y-1">
           <p className="text-text-secondary text-body-sm">{label}</p>
-          <div className="text-h2 font-bold text-text-primary">{value}</div>
+          <div className="xl:text-h2 lg:text-2xl text-lg font-bold text-text-primary">{value}</div>
           {subtext && <p className="text-text-tertiary text-body-sm">{subtext}</p>}
         </div>
         <div className="text-accent-purple">{icon}</div>
