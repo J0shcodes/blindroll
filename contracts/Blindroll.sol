@@ -255,6 +255,16 @@ contract Blindroll is ZamaEthereumConfig {
         emit PayrollExecuted(block.timestamp, processed);
     }
 
+    function getEmployeeEncryptedSalary(address emp)
+        external
+        view
+        onlyEmployer
+        employeeExists(emp)
+        returns (euint64)
+    {
+        return _employees[emp].encryptedSalary;
+    }
+
     // ── EMPLOYEE FUNCTIONS ────────────────────────────────────────────────────
 
     /// @notice Returns the caller's encrypted salary handle for client-side decryption.
@@ -270,16 +280,32 @@ contract Blindroll is ZamaEthereumConfig {
         return _employees[msg.sender].encryptedBalance;
     }
 
+    function requestWithdrawal() external onlyEmployee {
+        euint64 balance = _employees[msg.sender].encryptedBalance;
+
+        // Globally and permanently authorizes any entity to request its off-chain cleartext value
+        FHE.makePubliclyDecryptable(balance);
+    }
+
     /// @notice Employee withdraws their full accumulated balance as ETH.
     /// @dev Follows checks-effects-interactions pattern. Zeroes encrypted
     ///      balance in parallel with ETH transfer for bookkeeping consistency.
-    function withdraw() external onlyEmployee {
-        uint256 amount = _plainEmployeeBalanceMirror[msg.sender];
+    function executeWithdraw(uint64 decryptedAmount, bytes calldata decryptionProof) external onlyEmployee {
+        uint256 amount = uint256(decryptedAmount);
 
         if (amount == 0) {
             _setError(ERR_ZERO_BALANCE, msg.sender);
             return;
         }
+
+        euint64 balance = _employees[msg.sender].encryptedBalance;
+
+        bytes32[] memory cts = new bytes32[](1);
+        cts[0] = FHE.toBytes32(balance);
+
+        bytes memory cleartexts = abi.encode(decryptedAmount);
+
+        FHE.checkSignatures(cts, cleartexts, decryptionProof);
 
         // Effects first
         _plainEmployeeBalanceMirror[msg.sender] = 0;
