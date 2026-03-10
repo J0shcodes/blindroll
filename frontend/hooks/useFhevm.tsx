@@ -44,11 +44,7 @@ export interface UseFhevmReturn {
    *     args: [employeeAddress, handle, proof],
    *   });
    */
-  encryptUint64: (
-    value: bigint,
-    contractAddress: string,
-    signerAddress: string
-  ) => Promise<EncryptedInput>;
+  encryptUint64: (value: bigint, contractAddress: string, signerAddress: string) => Promise<EncryptedInput>;
 
   /**
    * User-decrypts a ciphertext handle using the connected wallet's identity.
@@ -66,10 +62,15 @@ export interface UseFhevmReturn {
    *   const salary = await userDecrypt(salaryHandle, contractAddress);
    *   // salary → 5000000000n (bigint)
    */
-  userDecrypt: (
-    handle: `0x${string}`,
-    contractAddress: string
-  ) => Promise<bigint | boolean | string | null>;
+  userDecrypt: (handle: `0x${string}`, contractAddress: string) => Promise<bigint | boolean | string | null>;
+
+  publicDecrypt: (
+    handles: string[],
+  ) => Promise<{
+    clearValues: Record<string, bigint | boolean | string>;
+    abiEncodedClearValues: `0x${string}`;
+    decryptionProof: `0x${string}`;
+  }>;
 }
 
 export function useFhevm(): UseFhevmReturn {
@@ -103,10 +104,9 @@ export function useFhevm(): UseFhevmReturn {
   //   gatewayChainId: 10901
   //   relayerUrl:     https://relayer.testnet.zama.org
   useEffect(() => {
-    let cancelled = false
+    let cancelled = false;
 
     const init = async () => {
-
       if (!isConnected || !isCorrectNetwork) {
         if (!cancelled) {
           setIsReady(false);
@@ -119,19 +119,19 @@ export function useFhevm(): UseFhevmReturn {
       initAttempted.current = true;
 
       try {
-        const sdk = await import("@zama-fhe/relayer-sdk/bundle")
-        const sdkModule = (sdk as any).defualt || sdk
-        
-        const {initSDK, createInstance, SepoliaConfig} = sdkModule
+        const sdk = await import("@zama-fhe/relayer-sdk/bundle");
+        const sdkModule = (sdk as any).defualt || sdk;
 
-        if(!initSDK) {
-          throw new Error("initSDK is undefined. check import path.")
+        const { initSDK, createInstance, SepoliaConfig } = sdkModule;
+
+        if (!initSDK) {
+          throw new Error("initSDK is undefined. check import path.");
         }
-        
+
         // Load WASM — must complete before createInstance is called
         await initSDK();
 
-        if (cancelled) return
+        if (cancelled) return;
 
         // Create instance
         // Override `network` with window.ethereum when available so the SDK
@@ -153,8 +153,7 @@ export function useFhevm(): UseFhevmReturn {
         }
       } catch (err) {
         if (!cancelled) {
-          const message =
-            err instanceof Error ? err.message : "fhEVM initialization failed";
+          const message = err instanceof Error ? err.message : "fhEVM initialization failed";
           console.error("[useFhevm] init failed:", err);
           setInitError(message);
           setIsReady(false);
@@ -162,10 +161,10 @@ export function useFhevm(): UseFhevmReturn {
       }
     };
 
-    init()
+    init();
 
     return () => {
-      cancelled = true
+      cancelled = true;
       initAttempted.current = false;
     };
   }, [isConnected, isCorrectNetwork]);
@@ -175,11 +174,7 @@ export function useFhevm(): UseFhevmReturn {
   // Encrypts a bigint as euint64, bound to a specific (contract, caller) pair.
   // The ZK proof that comes back is what FHE.isSenderAllowed() verifies on-chain.
   const encryptUint64 = useCallback(
-    async (
-      value: bigint,
-      contractAddress: string,
-      signerAddress: string
-    ): Promise<EncryptedInput> => {
+    async (value: bigint, contractAddress: string, signerAddress: string): Promise<EncryptedInput> => {
       if (!instance || !isReady) {
         throw new Error("fhEVM instance not ready. Wait for isReady = true.");
       }
@@ -196,14 +191,11 @@ export function useFhevm(): UseFhevmReturn {
         proof: uint8ArrayToHex(ciphertexts.inputProof) as `0x${string}`,
       };
     },
-    [instance, isReady]
+    [instance, isReady],
   );
 
   const userDecrypt = useCallback(
-    async (
-      handle: `0x${string}`,
-      contractAddress: string
-    ): Promise<bigint | boolean | string | null> => {
+    async (handle: `0x${string}`, contractAddress: string): Promise<bigint | boolean | string | null> => {
       if (!instance || !isReady) {
         throw new Error("fhEVM instance not ready.");
       }
@@ -224,21 +216,15 @@ export function useFhevm(): UseFhevmReturn {
         const durationDays = 10;
         const contractAddresses = [contractAddress];
 
-        const eip712 = instance.createEIP712(
-          keypair.publicKey,
-          contractAddresses,
-          startTimeStamp,
-          durationDays
-        );
+        const eip712 = instance.createEIP712(keypair.publicKey, contractAddresses, startTimeStamp, durationDays);
 
         // Step 3: Wallet signature — prompts the user (no gas, no transaction)
         const signature = await signer.signTypedData(
           eip712.domain,
           {
-            UserDecryptRequestVerification:
-              [...eip712.types.UserDecryptRequestVerification,] as TypedDataField[]
+            UserDecryptRequestVerification: [...eip712.types.UserDecryptRequestVerification] as TypedDataField[],
           },
-          eip712.message
+          eip712.message,
         );
 
         const handleContractPairs = [{ handle, contractAddress }];
@@ -251,7 +237,7 @@ export function useFhevm(): UseFhevmReturn {
           contractAddresses,
           signer.address,
           startTimeStamp,
-          durationDays
+          durationDays,
         );
 
         // result is a map of handle → decrypted value (bigint | boolean | string)
@@ -261,14 +247,23 @@ export function useFhevm(): UseFhevmReturn {
         return null;
       }
     },
-    [instance, isReady, getEthersSigner]
+    [instance, isReady, getEthersSigner],
   );
+
+  const publicDecrypt = useCallback(async (handles: string[]) => {
+    if (!instance || !isReady) {
+      throw new Error ("fhEVM instance not ready")
+    }
+
+    return await instance.publicDecrypt(handles)
+  }, [instance, isReady])
 
   return {
     isReady,
     initError,
     encryptUint64,
     userDecrypt,
+    publicDecrypt
   };
 }
 
@@ -279,14 +274,10 @@ export const ERROR_MESSAGES: Record<number, string> = {
   3: "Employee is not active",
 };
 
-export function getErrorMessage(
-  errorCode: bigint | boolean | string | null
-): string {
+export function getErrorMessage(errorCode: bigint | boolean | string | null): string {
   if (errorCode === null) return "Could not read error status";
   if (typeof errorCode === "bigint") {
-    return (
-      ERROR_MESSAGES[Number(errorCode)] ?? `Unknown error code: ${errorCode}`
-    );
+    return ERROR_MESSAGES[Number(errorCode)] ?? `Unknown error code: ${errorCode}`;
   }
   return "Unexpected error code format";
 }

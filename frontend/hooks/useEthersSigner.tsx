@@ -13,7 +13,7 @@ import type { WalletClient } from "viem"
  * Both produce an equivalent signer bound to the same address.
  */
 function walletClientToSigner(walletClient: WalletClient): JsonRpcSigner {
-    const provider = new BrowserProvider(walletClient.transport as Parameters<typeof BrowserProvider>[0])
+    const provider = new BrowserProvider(walletClient.transport as ConstructorParameters<typeof BrowserProvider>[0])
     const address = walletClient.account?.address
 
     return new JsonRpcSigner(provider, address!)
@@ -57,7 +57,7 @@ export function useGetEthersSigner(): () => Promise<JsonRpcSigner | undefined> {
             if (!walletClient) return undefined
 
             const provider = new BrowserProvider(
-                walletClient.transport as Parameters<typeof BrowserProvider>[0]
+                walletClient.transport as ConstructorParameters<typeof BrowserProvider>[0]
             )
             return provider.getSigner(walletClient.account.address)
         }

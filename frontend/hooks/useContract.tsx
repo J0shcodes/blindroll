@@ -25,6 +25,7 @@ export interface UseContractReturn {
 
     mutate: ReturnType<typeof useWriteContract>["mutate"]
     mutateAsync: ReturnType<typeof useWriteContract>["mutateAsync"]
+    reset: ReturnType<typeof useWriteContract>["reset"] 
 
     isPending: boolean
 
@@ -100,12 +101,14 @@ export function useContract(): UseContractReturn {
         address: contractAddress,
         abi: BLINDROLL_ABI,
         functionName: "getEncryptedTreasuryBalance",
+        account: walletAddress,
         query: {enabled: isConfigured && isEmployer}
     })
 
     const {
       mutate, 
-      mutateAsync, 
+      mutateAsync,
+      reset,
       isPending, 
       error: writeError, 
       data: txHash
@@ -121,13 +124,14 @@ export function useContract(): UseContractReturn {
         isEmployee,
         isRoleLoading,
         employerAddress: employerAddress as ContractAddress | undefined,
-        employeeCount,
+        employeeCount: employeeCount as bigint | undefined,
         employeeList: employeeList as readonly ContractAddress[] | undefined,
         encryptedSalaryHandle: encryptedSalaryHandle as EncryptedHandle | undefined,
         encryptedBalanceHandle: encryptedBalanceHandle as EncryptedHandle | undefined,
         encryptedTreasuryHandle: encryptedTreasuryHandle as EncryptedHandle | undefined,
         mutate,
         mutateAsync,
+        reset,
         isPending,
         isConfirming,
         isConfirmed,

@@ -61,7 +61,7 @@ export default function EmployeesPage() {
             </Button>
           </div>
         ) : (
-          <DataTable
+          <DataTable<EmployeeRowData>
             columns={[
               {
                 key: "address",

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { parseEther } from "viem";
 import { Button } from "@/components/Button";
 import { Card, CardContent, CardHeader } from "@/components/Card";
@@ -11,7 +11,7 @@ import { useContract } from "@/hooks/useContract";
 import { useFhevm } from "@/hooks/useFhevm";
 import { useWallet } from "@/hooks/useWallet";
 import { BLINDROLL_ABI } from "@/abi/abi";
-import { CheckCircle, AlertCircle, ExternalLink, Loader2, Wallet, Copy, Lock } from "lucide-react";
+import { CheckCircle, AlertCircle, ExternalLink, Loader2, Wallet, Copy, Lock, Eye, EyeOff } from "lucide-react";
 
 export default function TreasuryPage() {
   const { address } = useWallet();
@@ -21,7 +21,6 @@ export default function TreasuryPage() {
     mutateAsync,
     isPending,
     isConfirmed,
-    isConfirming,
     txHash,
     writeError,
   } = useContract();
@@ -30,12 +29,13 @@ export default function TreasuryPage() {
 
   const [depositAmount, setDepositAmount] = useState("");
   const [step, setStep] = useState<"idle" | "encrypting" | "signing" | "confirming">("idle");
-  // const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
   // Decrypted treasury balance
   const [treasuryBalance, setTreasuryBalance] = useState<string | null>(null);
   const [decrypting, setDecrypting] = useState(false);
+
+  console.log(encryptedTreasuryHandle)
 
   const isError = !!writeError;
   const isDone = isConfirmed;
@@ -110,36 +110,51 @@ export default function TreasuryPage() {
       </div>
 
       <Card>
-        <CardHeader>
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-accent-purple/10 flex items-center justify-center">
-              <Wallet className="w-5 h-5 text-accent-purple" />
+        <CardContent className="space-y-4">
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-accent-purple/10 flex items-center justify-center shrink-0">
+                <Wallet className="w-5 h-5 text-accent-purple" />
+              </div>
+              <div>
+                <p className="text-body-sm text-text-secondary">Treasury Balance</p>
+                <p className="text-h3 font-bold text-text-primary mt-0.5">
+                  {treasuryBalance ?? "[ENCRYPTED]"}
+                </p>
+              </div>
             </div>
-            <div>
-              <p className="text-body-sm text-text-secondary">Treasury Balance</p>
-              <p className="text-body-sm text-text-tertiary">Encrypted on-chain, only visible to you</p>
-            </div>
+            {/* Always-visible decrypt / hide button */}
+            {!treasuryBalance ? (
+              <Button
+                variant="primary"
+                size="sm"
+                className="gap-2 shrink-0"
+                onClick={handleDecryptTreasury}
+                disabled={decrypting || !fhevmReady || !encryptedTreasuryHandle}
+              >
+                {decrypting ? (
+                  <><Loader2 className="w-4 h-4 animate-spin" /> Decrypting…</>
+                ) : !fhevmReady ? (
+                  <><Loader2 className="w-4 h-4 animate-spin" /> Initializing FHE…</>
+                ) : !encryptedTreasuryHandle ? (
+                  "No treasury yet"
+                ) : (
+                  <><Eye className="w-4 h-4" /> Decrypt Balance</>
+                )}
+              </Button>
+            ) : (
+              <button
+                onClick={() => setTreasuryBalance(null)}
+                className="flex items-center gap-1.5 text-body-sm text-text-tertiary hover:text-text-secondary transition-colors shrink-0"
+              >
+                <EyeOff className="w-4 h-4" /> Hide
+              </button>
+            )}
           </div>
-        </CardHeader>
-        <CardContent>
-          <EncryptedValueDisplay value="[ENCRYPTED]" decrypted={treasuryBalance ?? undefined} label="Current balance" />
-          {encryptedTreasuryHandle && fhevmReady && !treasuryBalance && (
-            <Button
-              variant="secondary"
-              size="sm"
-              className="mt-4 gap-2"
-              onClick={handleDecryptTreasury}
-              disabled={decrypting}
-            >
-              {decrypting ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" /> Decrypting…
-                </>
-              ) : (
-                "Decrypt Balance"
-              )}
-            </Button>
-          )}
+          <p className="text-caption text-text-tertiary flex items-center gap-1.5">
+            <Lock className="w-3 h-3" />
+            Encrypted with FHE — requires a wallet signature to decrypt, no gas needed
+          </p>
         </CardContent>
       </Card>
 
@@ -203,7 +218,7 @@ export default function TreasuryPage() {
             </div>
           )}
 
-          {(step === "encrypting" || step === "signing" || step === "confirming") && (
+          {(step === "encrypting" || step === "signing" || step === "confirming" && !isDone) && (
             <div className="flex flex-col items-center gap-4 py-8 text-center">
               <Loader2 className="w-8 h-8 text-accent-purple animate-spin" />
               <div className="space-y-1">

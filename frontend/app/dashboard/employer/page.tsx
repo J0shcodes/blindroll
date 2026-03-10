@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 import { useState } from "react";
 import Link from "next/link";
@@ -6,53 +6,27 @@ import { Button } from "@/components/Button";
 import { Card, CardContent, CardHeader } from "@/components/Card";
 import { StatCard } from "@/components/StatCard";
 import { DataTable } from "@/components/DataTable";
-import { EncryptedValueDisplay } from "@/components/EncryptedValueDisplay";
 import { AddedAtCell, StatusCell } from "@/components/ui/EmployeesCell";
 import { useContract, ContractAddress } from "@/hooks/useContract";
-import { useFhevm } from "@/hooks/useFhevm";
 import { useWallet } from "@/hooks/useWallet";
-import { 
-  Users, Wallet, Send, Plus, Eye, EyeOff, 
-  Loader2, AlertCircle, ExternalLink, Copy, CheckCircle
+import {
+  Users,
+  Wallet,
+  Send,
+  Plus,
+  ExternalLink,
+  Copy,
+  CheckCircle,
+  Lock,
 } from "lucide-react";
+import { TreasuryDecryptInline } from "@/components/TreasuryDecryptInline";
+import { DecryptSalaryButton } from "@/components/DecryptSalaryButton";
 
 export default function EmployeeOverview() {
-  const {address} = useWallet()
-  const {
-    contractAddress,
-    employeeCount,
-    employeeList,
-    encryptedTreasuryHandle,
-  } = useContract()
+  const { address } = useWallet();
+  const { contractAddress, employeeCount, employeeList } = useContract();
 
-  const { isReady: fhevmReady, userDecrypt } = useFhevm();
-
-  // Treasury decrypt state
-  const [treasury, setTreasury] = useState<string | null>(null);
-  const [decryptingTreasury, setDecryptingTreasury] = useState(false);
-  const [treasuryError, setTreasuryError] = useState<string | null>(null);
-
-  // Contract address copy
   const [copied, setCopied] = useState(false);
-
-  async function handleDecryptTreasury() {
-    if (!encryptedTreasuryHandle || !contractAddress) return
-    setDecryptingTreasury(true)
-    setTreasuryError(null)
-    try {
-      const raw = await userDecrypt(encryptedTreasuryHandle, contractAddress)
-
-      if (typeof raw === "bigint") {
-        const eth = Number(raw) / 1e18
-        setTreasury(eth.toLocaleString(undefined, {minimumFractionDigits: 4, maximumFractionDigits: 6}) + "ETH")
-      }
-    } catch (error) {
-      setTreasuryError("Decryption failed")
-      console.error(error)
-    } finally {
-      setDecryptingTreasury(false)
-    }
-  }
 
   function handleCopyContract() {
     if (!contractAddress) return;
@@ -70,54 +44,27 @@ export default function EmployeeOverview() {
         <StatCard
           icon={<Users className="w-6 h-6" />}
           value={employeeCount !== undefined ? employeeCount.toString() : "..."}
-          label="Active Employees"
-          subtext="2 pending activation"
+          label="Total Employees"
+          subtext="Registered on contract"
         />
-        <StatCard
-          icon={<Wallet className="w-6 h-6" />}
-          value={treasury ?? "[ENCRYPTED]"}
-          label="Treasury Balance"
-          subtext="Sufficient for payroll"
-        />
-        <StatCard 
-          icon={<Send className="w-6 h-6" />} 
-          value="-" 
-          label="Last Payroll" 
-          subtext="No event indexing yet" 
-        />
-      </div>
 
-      {!treasury && encryptedTreasuryHandle && (
-        <div className="flex items-center gap-3">
-          <Button
-            variant="secondary"
-            size="sm"
-            className="gap-2"
-            onClick={handleDecryptTreasury}
-            disabled={decryptingTreasury || !fhevmReady}
-          >
-            {decryptingTreasury ? (
-              <><Loader2 className="w-4 h-4 animate-spin" /> Decrypting treasury…</>
-            ) : (
-              <><Eye className="w-4 h-4" /> Decrypt Treasury Balance</>
-            )}
-          </Button>
-          {treasuryError && (
-            <p className="text-body-sm text-accent-red flex items-center gap-1.5">
-              <AlertCircle className="w-4 h-4" /> {treasuryError}
-            </p>
-          )}
+        <div className="card space-y-1">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="w-10 h-10 rounded-lg bg-accent-purple/10 flex items-center justify-center shrink-0">
+              <Wallet className="w-5 h-5 text-accent-purple" />
+            </div>
+            <div>
+              <p className="text-h3 font-bold text-text-primary">[ENCRYPTED]</p>
+              <p className="text-body-sm text-text-secondary">Treasury Balance</p>
+            </div>
+          </div>
+          <p className="text-caption text-text-tertiary flex items-center gap-1">
+            <Lock className="w-3 h-3" /> Only you can decrypt this value
+          </p>
+          <TreasuryDecryptInline />
         </div>
-      )}
-
-      {treasury && (
-        <button
-          onClick={() => setTreasury(null)}
-          className="flex items-center gap-1.5 text-body-sm text-text-tertiary hover:text-text-secondary transition-colors"
-        >
-          <EyeOff className="w-4 h-4" /> Hide balance
-        </button>
-      )}
+        <StatCard icon={<Send className="w-6 h-6" />} value="-" label="Last Payroll" subtext="No event indexing yet" />
+      </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <Link href="/dashboard/employer/payroll">
@@ -175,7 +122,9 @@ export default function EmployeeOverview() {
             </p>
           </div>
           <Link href="/dashboard/employer/employees">
-            <Button variant="secondary" size="sm">Manage →</Button>
+            <Button variant="secondary" size="sm">
+              Manage →
+            </Button>
           </Link>
         </div>
 
@@ -210,7 +159,9 @@ export default function EmployeeOverview() {
                 {
                   key: "address",
                   header: "Salary",
-                  render: () => <EncryptedValueDisplay value="[ENCRYPTED]" />,
+                  render: (_, row) => <DecryptSalaryButton
+                      employeeAddress={(row as { address: ContractAddress }).address}
+                    />,
                 },
                 {
                   key: "address",
@@ -241,9 +192,11 @@ export default function EmployeeOverview() {
                   className="p-2 hover:bg-bg-tertiary rounded-lg transition-colors shrink-0"
                   title="Copy address"
                 >
-                  {copied
-                    ? <CheckCircle className="w-4 h-4 text-accent-green" />
-                    : <Copy className="w-4 h-4 text-text-secondary" />}
+                  {copied ? (
+                    <CheckCircle className="w-4 h-4 text-accent-green" />
+                  ) : (
+                    <Copy className="w-4 h-4 text-text-secondary" />
+                  )}
                 </button>
               )}
               {contractAddress && (

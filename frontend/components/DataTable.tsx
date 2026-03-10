@@ -1,7 +1,7 @@
 import { cn } from "@/lib/cn";
-import type { TableProps, TableColumn } from "@/lib/types";
+import type { TableProps } from "@/lib/types";
 
-export function DataTable<T extends Record<string, unknown>>({
+export function DataTable<T extends object>({
   columns,
   data,
   rowKey,
@@ -13,9 +13,9 @@ export function DataTable<T extends Record<string, unknown>>({
       <table className="w-full border-collapse">
         <thead>
           <tr className="border-b border-border-light">
-            {columns.map((col) => (
+            {columns.map((col, index) => (
               <th
-                key={String(col.key)}
+                key={index}
                 className={cn(
                   "px-6 py-3 text-left text-caption font-semibold text-text-secondary bg-bg-tertiary",
                   col.className,
@@ -34,8 +34,8 @@ export function DataTable<T extends Record<string, unknown>>({
               onClick={() => onRowClick?.(row)}
               style={{ cursor: onRowClick ? "pointer" : "default" }}
             >
-              {columns.map((col) => (
-                <td key={String(col.key)} className={cn("px-6 py-4 text-body text-text-primary", col.className)}>
+              {columns.map((col, index) => (
+                <td key={index} className={cn("px-6 py-4 text-body text-text-primary", col.className)}>
                   {col.render ? col.render(row[col.key], row) : String(row[col.key])}
                 </td>
               ))}

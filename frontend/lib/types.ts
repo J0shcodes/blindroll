@@ -79,16 +79,16 @@ export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> 
   icon?: React.ReactNode;
 }
 
-export interface TableColumn<T> {
-  key: keyof T;
+export interface TableColumn<T, K extends keyof T = keyof T> {
+  key: K;
   header: string;
-  render?: (value: unknown, row: EmployeeRowData) => React.ReactNode;
+  render?: (value: T[K], row: T) => React.ReactNode;
   className?: string;
 }
 
-export interface TableProps<T> {
+export interface TableProps<T extends object> {
   columns: TableColumn<T>[];
-  data: EmployeeRowData[] | { address: `0x${string}` }[];
+  data: T[];
   rowKey?: keyof T;
   onRowClick?: (row: T) => void;
   className?: string;

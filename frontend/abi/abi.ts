@@ -2,75 +2,80 @@ export const BLINDROLL_ABI = [
   {
     inputs: [],
     stateMutability: "nonpayable",
-    type: "constructor"
+    type: "constructor",
   },
   {
     inputs: [
       {
         internalType: "address",
         name: "employee",
-        type: "address"
-      }
+        type: "address",
+      },
     ],
     name: "AlreadyEmployee",
-    type: "error"
+    type: "error",
   },
   {
     inputs: [
       {
         internalType: "address",
         name: "employee",
-        type: "address"
-      }
+        type: "address",
+      },
     ],
     name: "EmployeeNotFound",
-    type: "error"
+    type: "error",
   },
   {
     inputs: [],
     name: "InvalidAddress",
-    type: "error"
+    type: "error",
+  },
+  {
+    inputs: [],
+    name: "InvalidKMSSignatures",
+    type: "error",
   },
   {
     inputs: [],
     name: "MaxEmployeesReached",
-    type: "error"
+    type: "error",
   },
   {
     inputs: [],
     name: "NotEmployee",
-    type: "error"
+    type: "error",
   },
   {
     inputs: [],
     name: "NotEmployer",
-    type: "error"
+    type: "error",
   },
   {
     inputs: [],
     name: "PayrollAlreadyRunning",
-    type: "error"
+    type: "error",
   },
   {
     inputs: [
       {
         internalType: "bytes32",
         name: "handle",
-        type: "bytes32"
+        type: "bytes32",
       },
       {
         internalType: "address",
         name: "sender",
-        type: "address"
-      }
+        type: "address",
+      },
     ],
     name: "SenderNotAllowedToUseHandle",
-    type: "error"
+    type: "error",
   },
   {
     inputs: [],
     name: "ZamaProtocolUnsupported",
-    type: "error"
+    type: "error",
   },
   {
     anonymous: false,
@@ -79,17 +84,17 @@ export const BLINDROLL_ABI = [
         indexed: true,
         internalType: "address",
         name: "employee",
-        type: "address"
+        type: "address",
       },
       {
         indexed: false,
         internalType: "uint256",
         name: "timestamp",
-        type: "uint256"
-      }
+        type: "uint256",
+      },
     ],
     name: "EmployeeAdded",
-    type: "event"
+    type: "event",
   },
   {
     anonymous: false,
@@ -98,17 +103,17 @@ export const BLINDROLL_ABI = [
         indexed: true,
         internalType: "address",
         name: "employee",
-        type: "address"
+        type: "address",
       },
       {
         indexed: false,
         internalType: "uint256",
         name: "timestamp",
-        type: "uint256"
-      }
+        type: "uint256",
+      },
     ],
     name: "EmployeeDeactivated",
-    type: "event"
+    type: "event",
   },
   {
     anonymous: false,
@@ -117,17 +122,17 @@ export const BLINDROLL_ABI = [
         indexed: true,
         internalType: "address",
         name: "employee",
-        type: "address"
+        type: "address",
       },
       {
         indexed: false,
         internalType: "uint256",
         name: "timestamp",
-        type: "uint256"
-      }
+        type: "uint256",
+      },
     ],
     name: "EmployeeReactivated",
-    type: "event"
+    type: "event",
   },
   {
     anonymous: false,
@@ -136,11 +141,11 @@ export const BLINDROLL_ABI = [
         indexed: true,
         internalType: "address",
         name: "addr",
-        type: "address"
-      }
+        type: "address",
+      },
     ],
     name: "ErrorChanged",
-    type: "event"
+    type: "event",
   },
   {
     anonymous: false,
@@ -149,17 +154,36 @@ export const BLINDROLL_ABI = [
         indexed: false,
         internalType: "uint256",
         name: "timestamp",
-        type: "uint256"
+        type: "uint256",
       },
       {
         indexed: false,
         internalType: "uint256",
         name: "employeesProcessed",
-        type: "uint256"
-      }
+        type: "uint256",
+      },
     ],
     name: "PayrollExecuted",
-    type: "event"
+    type: "event",
+  },
+  {
+    anonymous: false,
+    inputs: [
+      {
+        indexed: false,
+        internalType: "bytes32[]",
+        name: "handlesList",
+        type: "bytes32[]",
+      },
+      {
+        indexed: false,
+        internalType: "bytes",
+        name: "abiEncodedCleartexts",
+        type: "bytes",
+      },
+    ],
+    name: "PublicDecryptionVerified",
+    type: "event",
   },
   {
     anonymous: false,
@@ -168,17 +192,17 @@ export const BLINDROLL_ABI = [
         indexed: true,
         internalType: "address",
         name: "employee",
-        type: "address"
+        type: "address",
       },
       {
         indexed: false,
         internalType: "uint256",
         name: "timestamp",
-        type: "uint256"
-      }
+        type: "uint256",
+      },
     ],
     name: "SalaryUpdated",
-    type: "event"
+    type: "event",
   },
   {
     anonymous: false,
@@ -187,11 +211,11 @@ export const BLINDROLL_ABI = [
         indexed: false,
         internalType: "uint256",
         name: "timestamp",
-        type: "uint256"
-      }
+        type: "uint256",
+      },
     ],
     name: "TreasuryDeposited",
-    type: "event"
+    type: "event",
   },
   {
     anonymous: false,
@@ -200,23 +224,23 @@ export const BLINDROLL_ABI = [
         indexed: true,
         internalType: "address",
         name: "employee",
-        type: "address"
+        type: "address",
       },
       {
         indexed: false,
         internalType: "uint256",
         name: "amount",
-        type: "uint256"
+        type: "uint256",
       },
       {
         indexed: false,
         internalType: "uint256",
         name: "timestamp",
-        type: "uint256"
-      }
+        type: "uint256",
+      },
     ],
     name: "Withdrawal",
-    type: "event"
+    type: "event",
   },
   {
     inputs: [],
@@ -225,34 +249,34 @@ export const BLINDROLL_ABI = [
       {
         internalType: "uint256",
         name: "",
-        type: "uint256"
-      }
+        type: "uint256",
+      },
     ],
     stateMutability: "view",
-    type: "function"
+    type: "function",
   },
   {
     inputs: [
       {
         internalType: "address",
         name: "emp",
-        type: "address"
+        type: "address",
       },
       {
         internalType: "externalEuint64",
         name: "encryptedSalary",
-        type: "bytes32"
+        type: "bytes32",
       },
       {
         internalType: "bytes",
         name: "inputProof",
-        type: "bytes"
-      }
+        type: "bytes",
+      },
     ],
     name: "addEmployee",
     outputs: [],
     stateMutability: "nonpayable",
-    type: "function"
+    type: "function",
   },
   {
     inputs: [],
@@ -261,42 +285,42 @@ export const BLINDROLL_ABI = [
       {
         internalType: "uint256",
         name: "",
-        type: "uint256"
-      }
+        type: "uint256",
+      },
     ],
     stateMutability: "view",
-    type: "function"
+    type: "function",
   },
   {
     inputs: [
       {
         internalType: "address",
         name: "emp",
-        type: "address"
-      }
+        type: "address",
+      },
     ],
     name: "deactivateEmployee",
     outputs: [],
     stateMutability: "nonpayable",
-    type: "function"
+    type: "function",
   },
   {
     inputs: [
       {
         internalType: "externalEuint64",
         name: "encryptedAmount",
-        type: "bytes32"
+        type: "bytes32",
       },
       {
         internalType: "bytes",
         name: "inputProof",
-        type: "bytes"
-      }
+        type: "bytes",
+      },
     ],
     name: "depositToTreasury",
     outputs: [],
     stateMutability: "payable",
-    type: "function"
+    type: "function",
   },
   {
     inputs: [],
@@ -305,37 +329,55 @@ export const BLINDROLL_ABI = [
       {
         internalType: "address",
         name: "",
-        type: "address"
-      }
+        type: "address",
+      },
     ],
     stateMutability: "view",
-    type: "function"
+    type: "function",
   },
   {
     inputs: [],
     name: "executePayroll",
     outputs: [],
     stateMutability: "nonpayable",
-    type: "function"
+    type: "function",
+  },
+  {
+    inputs: [
+      {
+        internalType: "uint64",
+        name: "decryptedAmount",
+        type: "uint64",
+      },
+      {
+        internalType: "bytes",
+        name: "decryptionProof",
+        type: "bytes",
+      },
+    ],
+    name: "executeWithdraw",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
   },
   {
     inputs: [
       {
         internalType: "address",
         name: "emp",
-        type: "address"
-      }
+        type: "address",
+      },
     ],
     name: "getEmployeeAddedAt",
     outputs: [
       {
         internalType: "uint256",
         name: "",
-        type: "uint256"
-      }
+        type: "uint256",
+      },
     ],
     stateMutability: "view",
-    type: "function"
+    type: "function",
   },
   {
     inputs: [],
@@ -344,11 +386,30 @@ export const BLINDROLL_ABI = [
       {
         internalType: "uint256",
         name: "",
-        type: "uint256"
-      }
+        type: "uint256",
+      },
     ],
     stateMutability: "view",
-    type: "function"
+    type: "function",
+  },
+  {
+    inputs: [
+      {
+        internalType: "address",
+        name: "emp",
+        type: "address",
+      },
+    ],
+    name: "getEmployeeEncryptedSalary",
+    outputs: [
+      {
+        internalType: "euint64",
+        name: "",
+        type: "bytes32",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
   },
   {
     inputs: [],
@@ -357,11 +418,11 @@ export const BLINDROLL_ABI = [
       {
         internalType: "address[]",
         name: "",
-        type: "address[]"
-      }
+        type: "address[]",
+      },
     ],
     stateMutability: "view",
-    type: "function"
+    type: "function",
   },
   {
     inputs: [],
@@ -370,54 +431,54 @@ export const BLINDROLL_ABI = [
       {
         internalType: "euint64",
         name: "",
-        type: "bytes32"
-      }
+        type: "bytes32",
+      },
     ],
     stateMutability: "view",
-    type: "function"
+    type: "function",
   },
   {
     inputs: [
       {
         internalType: "address",
         name: "emp",
-        type: "address"
-      }
+        type: "address",
+      },
     ],
     name: "getIsEmployeeActive",
     outputs: [
       {
         internalType: "bool",
         name: "",
-        type: "bool"
-      }
+        type: "bool",
+      },
     ],
     stateMutability: "view",
-    type: "function"
+    type: "function",
   },
   {
     inputs: [
       {
         internalType: "address",
         name: "addr",
-        type: "address"
-      }
+        type: "address",
+      },
     ],
     name: "getLastError",
     outputs: [
       {
         internalType: "euint8",
         name: "errorCode",
-        type: "bytes32"
+        type: "bytes32",
       },
       {
         internalType: "uint256",
         name: "timestamp",
-        type: "uint256"
-      }
+        type: "uint256",
+      },
     ],
     stateMutability: "view",
-    type: "function"
+    type: "function",
   },
   {
     inputs: [],
@@ -426,11 +487,11 @@ export const BLINDROLL_ABI = [
       {
         internalType: "euint64",
         name: "",
-        type: "bytes32"
-      }
+        type: "bytes32",
+      },
     ],
     stateMutability: "view",
-    type: "function"
+    type: "function",
   },
   {
     inputs: [],
@@ -439,75 +500,75 @@ export const BLINDROLL_ABI = [
       {
         internalType: "euint64",
         name: "",
-        type: "bytes32"
-      }
+        type: "bytes32",
+      },
     ],
     stateMutability: "view",
-    type: "function"
+    type: "function",
   },
   {
     inputs: [
       {
         internalType: "address",
         name: "emp",
-        type: "address"
-      }
+        type: "address",
+      },
     ],
     name: "reactivateEmployee",
     outputs: [],
     stateMutability: "nonpayable",
-    type: "function"
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "requestWithdrawal",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
   },
   {
     inputs: [
       {
         internalType: "address",
         name: "emp",
-        type: "address"
+        type: "address",
       },
       {
         internalType: "uint256",
         name: "amountInWei",
-        type: "uint256"
-      }
+        type: "uint256",
+      },
     ],
     name: "setPlainSalaryMirror",
     outputs: [],
     stateMutability: "nonpayable",
-    type: "function"
+    type: "function",
   },
   {
     inputs: [
       {
         internalType: "address",
         name: "emp",
-        type: "address"
+        type: "address",
       },
       {
         internalType: "externalEuint64",
         name: "encryptedSalary",
-        type: "bytes32"
+        type: "bytes32",
       },
       {
         internalType: "bytes",
         name: "inputProof",
-        type: "bytes"
-      }
+        type: "bytes",
+      },
     ],
     name: "updateSalary",
     outputs: [],
     stateMutability: "nonpayable",
-    type: "function"
-  },
-  {
-    inputs: [],
-    name: "withdraw",
-    outputs: [],
-    stateMutability: "nonpayable",
-    type: "function"
+    type: "function",
   },
   {
     stateMutability: "payable",
-    type: "receive"
-  }
-]
+    type: "receive",
+  },
+];

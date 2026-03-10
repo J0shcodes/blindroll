@@ -28,12 +28,6 @@ export default function EmployeeOverview() {
   const [decryptingBalance, setDecryptingBalance] = useState(false);
   const [balanceError, setBalanceError] = useState<string | null>(null);
 
-  console.log({
-    fhevmReady,
-    encryptedSalaryHandle,
-    encryptedBalanceHandle,
-  });
-
   async function handleDecryptSalary() {
     if (!encryptedSalaryHandle || !contractAddress) return;
     setDecryptingSalary(true);
