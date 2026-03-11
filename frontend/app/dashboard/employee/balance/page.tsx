@@ -167,7 +167,6 @@ export default function BalancePage() {
               )}
               <Button
                 variant="tertiary"
-                className="bg-red-500"
                 fullWidth
                 onClick={() => {
                   setStep("idle");
