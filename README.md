@@ -1,7 +1,7 @@
 # Blindroll 🔐
 
 > **Confidential onchain payroll powered by Fully Homomorphic Encryption.**  
-> Pay your team on a public blockchain — salaries stay completely private.
+> Pay your team on a public blockchain, salaries stay completely private.
 
 <div align="center">
 
@@ -17,7 +17,7 @@
 
 ## The Problem
 
-Public blockchains are transparent by design. Every transaction — including payroll — is visible to anyone with a block explorer. For organizations paying contributors or employees onchain, this means:
+Public blockchains are transparent by design. Every transaction, including payroll, is visible to anyone with a block explorer. For organizations paying contributors or employees onchain, this means:
 
 - Salary structures are exposed company-wide and to competitors
 - Employees can see each other's compensation
@@ -26,7 +26,7 @@ Public blockchains are transparent by design. Every transaction — including pa
 
 ## The Solution
 
-Blindroll uses **Fully Homomorphic Encryption (FHE)** via [Zama's fhEVM](https://docs.zama.org/protocol) to perform payroll computations directly on encrypted data. Salary amounts are encrypted in the browser and **never appear in plaintext on-chain** — not in transactions, not in contract storage, not in event logs.
+Blindroll uses **Fully Homomorphic Encryption (FHE)** via [Zama's fhEVM](https://docs.zama.org/protocol) to perform payroll computations directly on encrypted data. Salary amounts are encrypted in the browser and **never appear in plaintext on-chain**, not in transactions, not in contract storage, not in event logs.
 
 ```
 Employer sets salary → encrypted client-side → stored on-chain as ciphertext handle
@@ -49,17 +49,17 @@ Employee views pay   → decryption happens client-side → only they see their 
 ## Features
 
 **For Employers**
-- Deploy a personal payroll contract directly from the browser — no CLI required
+- Deploy a personal payroll contract directly from the browser, no CLI required
 - Add employees with fully encrypted salary amounts (ZK proof verified on-chain)
-- Update salaries at any time — old ciphertext is replaced atomically
+- Update salaries at any time, old ciphertext is replaced atomically
 - Fund a confidential payroll treasury
-- Execute payroll in one transaction — all arithmetic is homomorphic
+- Execute payroll in one transaction, all arithmetic is homomorphic
 - Decrypt and view the treasury balance and any employee salary directly in the UI
 - Deactivate / reactivate employees without touching their encrypted data
 
 **For Employees**
 - Connect wallet and enter the employer's contract address to join
-- Decrypt and view your own salary — no one else can, not even the app
+- Decrypt and view your own salary, no one else can, not even the app
 - View and decrypt your accumulated balance after each payroll cycle
 - Withdraw accumulated ETH balance in one click
 - Receive encrypted error feedback (e.g. if treasury ran short) without leaking any balance data

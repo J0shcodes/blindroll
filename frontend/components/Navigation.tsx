@@ -11,7 +11,7 @@ export function Navigation() {
   const [isOpen, setIsOpen] = useState(false)
 
   const navItems = [
-    { label: 'Docs', href: '#docs' },
+    { label: 'Docs', href: 'https://github.com/J0shcodes/blindroll/blob/main/README.md' },
     { label: 'About', href: '#about' },
     { label: 'GitHub', href: 'https://github.com/J0shcodes/blindroll' },
   ]
