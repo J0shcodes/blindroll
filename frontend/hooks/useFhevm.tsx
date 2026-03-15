@@ -120,7 +120,7 @@ export function useFhevm(): UseFhevmReturn {
 
       try {
         const sdk = await import("@zama-fhe/relayer-sdk/bundle");
-        const sdkModule = (sdk as any).defualt || sdk;
+        const sdkModule = (sdk as any).default || sdk;
 
         const { initSDK, createInstance, SepoliaConfig } = sdkModule;
 

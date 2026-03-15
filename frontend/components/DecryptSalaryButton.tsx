@@ -24,22 +24,26 @@ export function DecryptSalaryButton({ employeeAddress }: DecryptSalaryButtonProp
   const contractAddress = getContractAddress();
   const { isReady: fhevmReady, userDecrypt } = useFhevm();
 
-  const {address: walletAddress} = useWallet()
+  const { address: walletAddress } = useWallet();
 
   const [salary, setSalary] = useState<string | null>(null);
   const [decrypting, setDecrypting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const { data: salaryHandle, isLoading: handleLoading, error: encryptedSalaryError } = useReadContract({
+  const {
+    data: salaryHandle,
+    isLoading: handleLoading,
+    error: encryptedSalaryError,
+  } = useReadContract({
     address: contractAddress,
     abi: BLINDROLL_ABI,
     functionName: "getEmployeeEncryptedSalary",
     args: [employeeAddress],
     query: { enabled: !!contractAddress },
-    account: walletAddress
+    account: walletAddress,
   });
 
-  console.log(salaryHandle, `Encrypted Salary: ${encryptedSalaryError}`)
+  console.log(salaryHandle, `Encrypted Salary: ${encryptedSalaryError}`);
 
   async function handleDecrypt() {
     if (!salaryHandle || !contractAddress) return;
@@ -54,7 +58,7 @@ export function DecryptSalaryButton({ employeeAddress }: DecryptSalaryButtonProp
         setError("Unexpected result");
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Decvryption failed");
+      setError(err instanceof Error ? err.message : "Decryption failed");
     } finally {
       setDecrypting(false);
     }
@@ -78,7 +82,7 @@ export function DecryptSalaryButton({ employeeAddress }: DecryptSalaryButtonProp
   if (error) {
     return (
       <div className="flex items-center gap-1.5">
-        <AlertCircle className="w-3.5 h-3.5 text-accent-red flex-shrink-0" />
+        <AlertCircle className="w-3.5 h-3.5 text-accent-red shrink-0" />
         <span className="text-caption text-accent-red">{error}</span>
         <button
           onClick={() => setError(null)}
@@ -106,6 +110,8 @@ export function DecryptSalaryButton({ employeeAddress }: DecryptSalaryButtonProp
         <>
           <Loader2 className="w-3.5 h-3.5 animate-spin" /> Decrypting…
         </>
+      ) : !fhevmReady ? (
+        "Initializing FHE…"
       ) : (
         <>
           <Eye className="w-3.5 h-3.5" /> Decrypt
